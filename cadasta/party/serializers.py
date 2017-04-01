@@ -3,20 +3,20 @@
 from django.utils.translation import ugettext as _
 from rest_framework import serializers
 
-from .models import Party, PartyRelationship, TenureRelationship
+from . import models
 from core.serializers import FieldSelectorSerializer
 from spatial.serializers import SpatialUnitSerializer
 
 
 class PartySerializer(FieldSelectorSerializer, serializers.ModelSerializer):
     class Meta:
-        model = Party
+        model = models.Party
         fields = ('id', 'name', 'type', 'attributes', )
         read_only_fields = ('id', )
 
     def create(self, validated_data):
         project = self.context['project']
-        return Party.objects.create(
+        return models.Party.objects.create(
             project=project, **validated_data)
 
 
@@ -27,7 +27,7 @@ class PartyRelationshipReadSerializer(serializers.ModelSerializer):
     rel_class = serializers.SerializerMethodField()
 
     class Meta:
-        model = PartyRelationship
+        model = models.PartyRelationship
         fields = ('rel_class', 'id', 'party1', 'party2', 'type', 'attributes')
         read_only_fields = ('id',)
 
@@ -38,7 +38,7 @@ class PartyRelationshipReadSerializer(serializers.ModelSerializer):
 class PartyRelationshipWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = PartyRelationship
+        model = models.PartyRelationship
         fields = ('id', 'party1', 'party2', 'type', 'attributes')
         read_only_fields = ('id',)
 
@@ -62,7 +62,7 @@ class PartyRelationshipWriteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         project = self.context['project']
-        return PartyRelationship.objects.create(
+        return models.PartyRelationship.objects.create(
             project=project, **validated_data)
 
 
@@ -74,7 +74,7 @@ class TenureRelationshipReadSerializer(serializers.ModelSerializer):
     rel_class = serializers.SerializerMethodField()
 
     class Meta:
-        model = TenureRelationship
+        model = models.TenureRelationship
         fields = ('rel_class', 'id', 'party', 'spatial_unit', 'tenure_type',
                   'attributes')
         read_only_fields = ('id',)
@@ -86,7 +86,7 @@ class TenureRelationshipReadSerializer(serializers.ModelSerializer):
 class TenureRelationshipWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = TenureRelationship
+        model = models.TenureRelationship
         fields = ('id', 'party', 'spatial_unit', 'tenure_type', 'attributes')
         read_only_fields = ('id',)
 
@@ -107,5 +107,23 @@ class TenureRelationshipWriteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         project = self.context['project']
-        return TenureRelationship.objects.create(
+        return models.TenureRelationship.objects.create(
             project=project, **validated_data)
+
+
+class TenureRelationshipTypeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.TenureRelationshipType
+        fields = ('id', 'label')
+
+
+class TenureRelationshipDownloadSerializer(serializers.ModelSerializer):
+
+    tenure_type = TenureRelationshipTypeSerializer()
+
+    class Meta:
+        model = models.TenureRelationship
+        fields = ('id', 'party_id', 'spatial_unit_id', 'tenure_type',
+                  'attributes')
+        read_only_fields = ('id',)
