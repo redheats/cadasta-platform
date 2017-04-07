@@ -24,11 +24,11 @@ class SuperUserCheckMixin:
     @property
     def is_superuser(self):
         if self.is_su is None:
-            role = Role.objects.filter(name='superuser')
+            role = Role.objects.filter(name='superuser').first()
             self.is_su = False
-            if len(role) > 0:
+            if role:
                 if hasattr(self.request.user, 'assigned_policies'):
-                    if role[0] in self.request.user.assigned_policies():
+                    if role in self.request.user.assigned_policies():
                         self.is_su = True
         return self.is_su
 

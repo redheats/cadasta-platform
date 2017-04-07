@@ -22,6 +22,8 @@ from .choices import ADMIN_CHOICES, ROLE_CHOICES
 # from .download.resources import ResourceExporter
 from .download.shape import ShapeExporter
 from .download.xls import XLSExporter
+from .download.shape import ShapeExporter
+from .download.resources import ResourceExporter
 from organization import fields as org_fields
 from .models import Organization, OrganizationRole, Project, ProjectRole
 
@@ -465,6 +467,7 @@ class ProjectEditPermissions(PermissionsForm, forms.Form):
         return self.project
 
 
+# TODO: Remove
 class DownloadForm(forms.Form):
     CHOICES = (
         ('shp', 'SHP'),

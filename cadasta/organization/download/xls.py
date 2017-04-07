@@ -10,6 +10,7 @@ from .base import Exporter
 MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 
+# TODO: Remove
 class XLSExporter(Exporter):
 
     def write_items(self, worksheet, queryset, content_type, model_attrs):
