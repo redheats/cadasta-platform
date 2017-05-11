@@ -407,6 +407,12 @@ class ProjectDashboard(PermissionRequiredMixin,
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         num_locations = self.object.spatial_units.count()
+        total_ha = 0
+        for unit in self.object.spatial_units.all():
+            if unit.geometry_details:
+                total_ha += float(unit.geometry_details['area']['ha'])
+        if total_ha > 0:
+            context['total_ha'] = total_ha
         num_parties = self.object.parties.count()
         num_resources = self.object.resource_set.filter(archived=False).count()
         context['has_content'] = (
