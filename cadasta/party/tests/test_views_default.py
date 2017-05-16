@@ -8,6 +8,7 @@ from core.tests.utils.files import make_dirs  # noqa
 from django.contrib.contenttypes.models import ContentType
 from django.http import Http404
 from django.test import TestCase
+from django.core.urlresolvers import reverse
 from jsonattrs.models import Attribute, AttributeType, Schema
 from organization.tests.factories import ProjectFactory
 from resources.forms import AddResourceFromLibraryForm, ResourceForm
@@ -319,6 +320,20 @@ class PartyDetailTest(ViewTestCase, UserTestCase, TestCase):
         response = self.request(user=user)
         assert response.status_code == 200
         assert response.content == self.expected_content
+
+    def test_get_with_authorized_user_including_resources(self):
+        ResourceFactory.create(project=self.project, content_object=self.party)
+        user = UserFactory.create()
+        assign_policies(user)
+        response = self.request(user=user)
+        assert response.status_code == 200
+        assert response.content == self.render_content(
+            resource_src=reverse(
+                'async:resources:party',
+                args=[self.project.organization.slug, self.project.slug,
+                      self.party.id]),
+            resource_exists=True
+        )
 
     def test_get_with_incomplete_questionnaire(self):
         questionnaire = q_factories.QuestionnaireFactory.create()
@@ -1136,6 +1151,21 @@ class PartyRelationshipDetailTest(ViewTestCase, UserTestCase, TestCase):
         response = self.request(user=user)
         assert response.status_code == 200
         assert response.content == self.expected_content
+
+    def test_get_with_authorized_user_including_resources(self):
+        ResourceFactory.create(project=self.project,
+                               content_object=self.relationship)
+        user = UserFactory.create()
+        assign_policies(user)
+        response = self.request(user=user)
+        assert response.status_code == 200
+        assert response.content == self.render_content(
+            resource_src=reverse(
+                'async:resources:relationship',
+                args=[self.project.organization.slug, self.project.slug,
+                      self.relationship.id]),
+            resource_exists=True
+        )
 
     def test_get_with_incomplete_questionnaire(self):
         questionnaire = q_factories.QuestionnaireFactory.create()

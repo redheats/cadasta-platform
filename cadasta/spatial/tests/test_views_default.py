@@ -369,6 +369,21 @@ class LocationDetailTest(ViewTestCase, UserTestCase, TestCase):
         assert response.status_code == 200
         assert response.content == self.expected_content
 
+    def test_get_with_authorized_user_including_resources(self):
+        ResourceFactory.create(project=self.project,
+                               content_object=self.location)
+        user = UserFactory.create()
+        assign_policies(user)
+        response = self.request(user=user)
+        assert response.status_code == 200
+        assert response.content == self.render_content(
+            resource_src=reverse(
+                'async:resources:location',
+                args=[self.project.organization.slug, self.project.slug,
+                      self.location.id]),
+            resource_exists=True
+        )
+
     def test_does_not_show_buttons_when_no_edit_permissions(self):
         user = UserFactory.create()
         assign_policies(user, True)

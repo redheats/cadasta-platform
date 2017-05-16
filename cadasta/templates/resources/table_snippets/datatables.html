@@ -1,0 +1,55 @@
+{% load i18n %}
+
+<script>
+window.addEventListener('load', function() {
+  $('#resource-list').DataTable({
+    serverSide: true,
+    drawCallback: function (settings) {
+      var response = this.api().ajax.json().tbody;
+      $('#resource-list tbody').html(this.api().ajax.json().tbody);
+
+      // Link each resource row to its resource detail page
+      $('tr.linked-resource').bind('click', function(e) {
+        window.document.location = e.currentTarget.dataset.linkUrl;
+      });
+
+      // Activate restore deleted modal on restore buttons
+      $('button.restore').bind('click', function(e) {
+        // This is needed to counter the row-click event handler
+        e.stopPropagation();
+        $('#undelete_resource_confirm .modal-footer a').attr('href', e.currentTarget.dataset.unarchiveUrl + '?next=' + window.location.pathname);
+        $('#undelete_resource_confirm').modal();
+      });
+    },
+    ajax: {
+      url: $('#resource-list').attr('data-src'),
+    },
+    dom: '<"table-search clearfix"f>t<"table-pagination"p><"table-entries"i><"table-num"l>',
+    language: {
+      emptyTable:     "{% trans "No data available in table" %}",
+      info:           "{% trans "Showing _START_ - _END_ of _TOTAL_" %}",
+      infoEmpty:      "{% trans "Showing 0 - 0 of 0" %}",
+      infoFiltered:   "{% trans "(filtered from _MAX_ total rows)" %}",
+      lengthMenu:     '<select class="form-control input-sm">'+
+                        ' <option value="10">{% trans "10 per page" %}</option>'+
+                        ' <option value="25">{% trans "25 per page" %}</option>'+
+                        ' <option value="50">{% trans "50 per page" %}</option>'+
+                        ' <option value="100">{% trans "100 per page" %}</option>'+
+                        '</select>',
+      search: '<div class="input-group"><span class="input-group-addon"><span class="glyphicon glyphicon-search"></span></span>',
+      searchPlaceholder: '{% trans "Search" %}',
+      zeroRecords:    "{% trans "No matching records found" %}",
+      paginate: {
+        next: '<span class="glyphicon glyphicon-triangle-right"></span>',
+        previous: '<span class="glyphicon glyphicon-triangle-left"></span>',
+        first:      "{% trans "First" %}",
+        last:       "{% trans "Last" %}"
+      },
+      aria: {
+        sortAscending:  ": {% trans "activate to sort column ascending" %}",
+        sortDescending: ": {% trans "activate to sort column descending" %}"
+      }
+    }
+  });
+});
+</script>

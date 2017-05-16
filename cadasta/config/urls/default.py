@@ -70,6 +70,9 @@ async = [
     url(r'^',
         include('search.urls.async',
                 namespace='search')),
+    url(r'^',
+        include('resources.urls.async',
+                namespace='resources')),
 ]
 
 urlpatterns = [

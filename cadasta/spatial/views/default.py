@@ -68,7 +68,6 @@ class LocationDetail(LoginPermissionRequiredMixin,
                      mixins.SpatialUnitObjectMixin,
                      organization_mixins.ProjectAdminCheckMixin,
                      resource_mixins.HasUnattachedResourcesMixin,
-                     resource_mixins.DetachableResourcesListMixin,
                      generic.DetailView):
     template_name = 'spatial/location_detail.html'
     permission_required = 'spatial.view'
@@ -77,6 +76,13 @@ class LocationDetail(LoginPermissionRequiredMixin,
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
+
+        url_kwargs = self.kwargs
+        url_kwargs['object_id'] = url_kwargs.pop('location')
+        context['resource_src'] = reverse('async:resources:location',
+                                          kwargs=url_kwargs)
+        context['resource_exists'] = context['location'].resources.exists()
+
         context['relationships'] = self.object.tenurerelationship_set.all(
         ).select_related('party').defer('party__attributes')
 

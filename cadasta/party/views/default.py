@@ -65,7 +65,6 @@ class PartiesDetail(LoginPermissionRequiredMixin,
                     mixins.PartyObjectMixin,
                     organization_mixins.ProjectAdminCheckMixin,
                     resource_mixins.HasUnattachedResourcesMixin,
-                    resource_mixins.DetachableResourcesListMixin,
                     generic.DetailView):
     template_name = 'party/party_detail.html'
     permission_required = 'party.view'
@@ -74,6 +73,13 @@ class PartiesDetail(LoginPermissionRequiredMixin,
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
+
+        url_kwargs = self.kwargs
+        url_kwargs['object_id'] = url_kwargs.pop('party')
+        context['resource_src'] = reverse('async:resources:party',
+                                          kwargs=url_kwargs)
+        context['resource_exists'] = context['party'].resources.exists()
+
         context['relationships'] = self.object.tenurerelationship_set.all(
         ).select_related('spatial_unit').defer('spatial_unit__attributes')
 
@@ -218,9 +224,7 @@ class PartyResourcesNew(LoginPermissionRequiredMixin,
 class PartyRelationshipDetail(LoginPermissionRequiredMixin,
                               JsonAttrsMixin,
                               mixins.PartyRelationshipObjectMixin,
-                              organization_mixins.ProjectAdminCheckMixin,
                               resource_mixins.HasUnattachedResourcesMixin,
-                              resource_mixins.DetachableResourcesListMixin,
                               generic.DetailView):
     template_name = 'party/relationship_detail.html'
     permission_required = 'tenure_rel.view'
@@ -229,6 +233,12 @@ class PartyRelationshipDetail(LoginPermissionRequiredMixin,
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
+
+        url_kwargs = self.kwargs
+        url_kwargs['object_id'] = url_kwargs.pop('relationship')
+        context['resource_src'] = reverse('async:resources:relationship',
+                                          kwargs=url_kwargs)
+        context['resource_exists'] = context['relationship'].resources.exists()
 
         project = context['object']
         if project.current_questionnaire:

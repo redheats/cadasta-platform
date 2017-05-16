@@ -15,31 +15,26 @@ from ..models import ContentObject, Resource
 
 
 class ProjectResources(LoginPermissionRequiredMixin,
-                       mixins.ProjectResourceMixin,
                        mixins.HasUnattachedResourcesMixin,
-                       mixins.DetachableResourcesListMixin,
+                       organization_mixins.ProjectMixin,
                        organization_mixins.ProjectAdminCheckMixin,
-                       generic.ListView):
+                       generic.TemplateView):
     template_name = 'resources/project_list.html'
     permission_required = 'resource.list'
     permission_denied_message = error_messages.RESOURCE_LIST
 
-    def filter_archived_resources(self, view, obj):
-        if obj.archived:
-            return ('resource.view', 'resource.unarchive')
-        else:
-            return ('resource.view',)
-
-    permission_filter_queryset = filter_archived_resources
-    use_resource_library_queryset = True
-
-    def get_resource_list(self):
-        return self.get_queryset()
-
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        context['success_url'] = None
+
+        project = self.get_project()
+        context['object'] = project
+        context['resource_src'] = reverse(
+            'async:resources:list',
+            args=[project.organization.slug, project.slug])
         return context
+
+    def get_perms_objects(self):
+        return [self.get_project()]
 
 
 class ProjectResourcesAdd(LoginPermissionRequiredMixin,
