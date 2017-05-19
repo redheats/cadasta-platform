@@ -107,15 +107,6 @@
                 {% endblocktrans %}
               </li>
             </ul>
-            <ul class="list-inline stats">
-              <li>
-                {% blocktrans count counter=total_ha %}
-                <div class="num">{{ counter }}</div> hectares
-                {% plural %}
-                <div class="num">{{ counter }}</div> hectares
-                {% endblocktrans %}
-              </li>
-            </ul>
           {% else %}
             <!-- Starter text -->
             <h3 style="text-transform: capitalize;">{% trans "Congratulations!" %}</h3>
