@@ -82,27 +82,30 @@ class BackgroundTask(RandomIDModel):
         return options
 
     @classmethod
-    @transaction.atomic
     def chain(cls, *tasks):
         """
         Chain tasks together in order they were recieved. Requires input
         of BackgroundTask instances. Will update instances to connect
-        tasks to their parent BackgroundTasks instances. Will not save
-        those instances. Saving must be done manually.
+        tasks to their parent BackgroundTasks instances. If an instance
+        is updated with a parent task or is without ID, the instance
+        will be saved. Will not schedule chain, that must be done
+        manually.
         """
+        # TODO: Support grouping
         previous_id = None
-        chain = None
-        for task in tasks:
-            task.schedule_task_on_create = False
-            if previous_id:
-                task.parent_id = previous_id
-            if not task.id:
-                task.save()
-            previous_id = task.id
-            sig = task.as_signature()
-            chain = (chain | sig) if chain else sig
-        setattr(chain, 'models', tasks)
-        return chain
+        _chain = None
+        with transaction.atomic():
+            for task in tasks:
+                task.schedule_task_on_create = False
+                if previous_id:
+                    task.parent_id = previous_id
+                    task.save()
+                if not task.id:
+                    task.save()
+                previous_id = task.id
+                sig = task.as_signature()
+                _chain = (_chain | sig) if _chain else sig
+        return _chain
 
     def as_signature(self):
         return Signature(

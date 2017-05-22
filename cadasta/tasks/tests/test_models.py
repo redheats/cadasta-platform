@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from celery.canvas import _chain, Signature
 from django.core.exceptions import ValidationError
@@ -132,6 +132,8 @@ class TestBackgroundTaskModel(TestCase):
                 type=name)
             for i, name in enumerate(['foo.first', 'bar.second', 'foo.third'])
         ]
+        for task in tasks:
+            task.save = MagicMock()
         ch = BackgroundTask.chain(*tasks)
         assert isinstance(ch, _chain)
         assert all([isinstance(sig, Signature) for sig in ch.tasks])
