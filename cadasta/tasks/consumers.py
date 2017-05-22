@@ -2,6 +2,8 @@ import logging
 
 from celery import bootsteps, app
 from django.conf import settings
+from django.db.models import F
+from django.db.models.expressions import CombinedExpression, Value
 from kombu import Consumer, Queue
 
 from .models import BackgroundTask
@@ -38,24 +40,29 @@ class ResultConsumer(bootsteps.ConsumerStep):
     def handle_message(self, body, message):
         try:
             logger.debug('Received message: {0!r}'.format(body))
-            task = BackgroundTask.objects.get(id=body['task_id'])
-            task.status = body.get('status') or 'PROGRESS'
+            task_qs = BackgroundTask.objects.filter(id=body['task_id'])
+            assert task_qs.exists()
 
-            output = body['result']
-            if task.status in ('SUCCESS', 'FAILURE'):
-                task.output = output
+            status = body.get('status')
+            if status:
+                task_qs.update(status=status)
+
+            result = body['result']
+            if status in BackgroundTask.DONE_STATES:
+                task_qs.update(output=result)
             else:
-                log = None
-                if isinstance(output, str):
-                    log = output
-                elif isinstance(output, dict) and output.get('log'):
-                    log = output['log']
+                assert isinstance(result, dict), (
+                    "Malformed result data, expecting a dict"
+                )
+                log = result.get('log')
                 if log:
-                    task.log.append(log)
-            task.save()
+                    task_qs.update(log=CombinedExpression(
+                        F('log'), '||', Value([log])
+                    ))
         except:
             logger.exception("Failed to process task")
-        try:
-            message.ack()
-        except:
-            logger.exception("Failed to acknowledge message")
+        finally:
+            try:
+                message.ack()
+            except:
+                logger.exception("Failed to acknowledge message")

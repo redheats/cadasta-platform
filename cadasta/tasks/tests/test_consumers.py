@@ -1,6 +1,8 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, call
 
 from django.test import TestCase, override_settings
+from django.db.models import F
+from django.db.models.expressions import CombinedExpression, Value
 
 from tasks.consumers import ResultConsumer
 from tasks.tests.factories import BackgroundTaskFactory
@@ -22,7 +24,7 @@ class TestConsumers(TestCase):
 
         with self.assertRaises(ValueError):
             ResultConsumer()
-        assert not consumer_init.called
+        self.assertFalse(consumer_init.called)
 
         # Correct setup
         mock_app.amqp.queues = ['foo', 'bar']
@@ -32,21 +34,20 @@ class TestConsumers(TestCase):
     @patch('tasks.consumers.bootsteps.ConsumerStep.__init__', MagicMock())
     def test_get_queues(self):
         consumers = ResultConsumer().get_consumers(MagicMock())
-        assert len(consumers) == 1
+        self.assertEqual(len(consumers), 1)
         consumer = consumers[0]
-        assert len(consumer.queues) == 1
+        self.assertEqual(len(consumer.queues), 1)
         queue = consumer.queues[0]
         queue.name == 'results-queue'
 
     @patch('tasks.consumers.bootsteps.ConsumerStep.__init__', MagicMock())
-    @patch('tasks.consumers.BackgroundTask.objects.get')
-    def test_message_handler_completed(self, mock_get):
+    @patch('tasks.consumers.BackgroundTask.objects.filter')
+    def test_message_handler_completed(self, mock_filter):
         """
         Ensure completed tasks set output to the output property.
         """
-        task = BackgroundTaskFactory.build(status='PENDING', log=[])
-        mock_get.return_value = task
-        task.save = MagicMock()
+        mock_qs = MagicMock()
+        mock_filter.return_value = mock_qs
 
         fake_body = {
             'task_id': '123',
@@ -55,44 +56,20 @@ class TestConsumers(TestCase):
         }
         mock_msg = MagicMock()
         ResultConsumer().handle_message(fake_body, mock_msg)
-        task.save.assert_called_once_with()
+        mock_qs.update.assert_has_calls([
+            call(status='SUCCESS'),
+            call(output='All succeeded')
+        ])
         mock_msg.ack.assert_called_once_with()
-        assert task.status == 'SUCCESS'
-        assert task.output == "All succeeded"
-        assert task.log == []
 
     @patch('tasks.consumers.bootsteps.ConsumerStep.__init__', MagicMock())
-    @patch('tasks.consumers.BackgroundTask.objects.get')
-    def test_message_handler_in_progress_str_log(self, mock_get):
-        """
-        Ensure in-progess tasks append output str to the log.
-        """
-        task = BackgroundTaskFactory.build(status='PENDING', log=[])
-        mock_get.return_value = task
-        task.save = MagicMock()
-
-        fake_body = {
-            'task_id': '123',
-            'status': 'PROGRESS',
-            'result': 'Things are coming along',
-        }
-        mock_msg = MagicMock()
-        ResultConsumer().handle_message(fake_body, mock_msg)
-        task.save.assert_called_once_with()
-        mock_msg.ack.assert_called_once_with()
-        assert task.status == 'PROGRESS'
-        assert task.output is None
-        assert task.log == ['Things are coming along']
-
-    @patch('tasks.consumers.bootsteps.ConsumerStep.__init__', MagicMock())
-    @patch('tasks.consumers.BackgroundTask.objects.get')
-    def test_message_handler_in_progress_dict_log(self, mock_get):
+    @patch('tasks.consumers.BackgroundTask.objects.filter')
+    def test_message_handler_in_progress_dict_log(self, mock_filter):
         """
         Ensure in-progess tasks append output dict with log key to the log.
         """
-        task = BackgroundTaskFactory.build(status='PENDING', log=[])
-        mock_get.return_value = task
-        task.save = MagicMock()
+        mock_qs = MagicMock()
+        mock_filter.return_value = mock_qs
 
         fake_body = {
             'task_id': '123',
@@ -101,11 +78,15 @@ class TestConsumers(TestCase):
         }
         mock_msg = MagicMock()
         ResultConsumer().handle_message(fake_body, mock_msg)
-        task.save.assert_called_once_with()
+        calls = mock_qs.update.call_args_list
+        self.assertEqual(calls[0], call(status='PROGRESS'))
+        self.assertEqual(
+            str(calls[1]),
+            str(call(log=CombinedExpression(
+                F('log'), '||', Value(['Things are coming along'])
+            )))
+        )
         mock_msg.ack.assert_called_once_with()
-        assert task.status == 'PROGRESS'
-        assert task.output is None
-        assert task.log == ['Things are coming along']
 
     @patch('tasks.consumers.bootsteps.ConsumerStep.__init__', MagicMock())
     @patch('tasks.consumers.logger')
@@ -117,17 +98,17 @@ class TestConsumers(TestCase):
         empty_body = {}
         ResultConsumer().handle_message(empty_body, mock_msg)
         mock_msg.ack.assert_called_once_with()
-        assert mock_logger.exception.call_count == 1
+        self.assertEqual(mock_logger.exception.call_count, 1)
 
     @patch('tasks.consumers.bootsteps.ConsumerStep.__init__', MagicMock())
-    @patch('tasks.consumers.BackgroundTask.objects.get')
+    @patch('tasks.consumers.BackgroundTask.objects.filter')
     @patch('tasks.consumers.logger')
-    def test_message_handler_handles_failed_ack(self, mock_logger, mock_get):
+    def test_message_handler_handles_failed_ack(self, mock_logger, mock_filter):
         """
         Ensure that exceptions in task parsing are handled gracefully
         """
         task = BackgroundTaskFactory.build(status='PENDING')
-        mock_get.return_value = task
+        mock_filter.exists.return_value = True
         task.save = MagicMock()
         fake_body = {
             'task_id': '123',
@@ -138,4 +119,4 @@ class TestConsumers(TestCase):
         mock_msg = MagicMock(ack=ack_func)
         ResultConsumer().handle_message(fake_body, mock_msg)
         ack_func.assert_called_once_with()
-        assert mock_logger.exception.call_count == 1
+        self.assertEqual(mock_logger.exception.call_count, 1)
