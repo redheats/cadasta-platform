@@ -90,7 +90,7 @@ class TestConsumers(TestCase):
 
     @patch('tasks.consumers.bootsteps.ConsumerStep.__init__', MagicMock())
     @patch('tasks.consumers.logger')
-    def test_message_handler_handles_exceptions(self, mock_logger):
+    def test_message_handler_handles_exceptions(self, mock_log):
         """
         Ensure that exceptions in task parsing are handled gracefully
         """
@@ -98,12 +98,12 @@ class TestConsumers(TestCase):
         empty_body = {}
         ResultConsumer().handle_message(empty_body, mock_msg)
         mock_msg.ack.assert_called_once_with()
-        self.assertEqual(mock_logger.exception.call_count, 1)
+        self.assertEqual(mock_log.exception.call_count, 1)
 
     @patch('tasks.consumers.bootsteps.ConsumerStep.__init__', MagicMock())
     @patch('tasks.consumers.BackgroundTask.objects.filter')
     @patch('tasks.consumers.logger')
-    def test_message_handler_handles_failed_ack(self, mock_logger, mock_filter):
+    def test_message_handler_handles_failed_ack(self, mock_log, mock_filter):
         """
         Ensure that exceptions in task parsing are handled gracefully
         """
@@ -119,4 +119,4 @@ class TestConsumers(TestCase):
         mock_msg = MagicMock(ack=ack_func)
         ResultConsumer().handle_message(fake_body, mock_msg)
         ack_func.assert_called_once_with()
-        self.assertEqual(mock_logger.exception.call_count, 1)
+        self.assertEqual(mock_log.exception.call_count, 1)
