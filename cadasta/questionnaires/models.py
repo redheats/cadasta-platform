@@ -53,6 +53,11 @@ class Questionnaire(RandomIDModel):
     md5_hash = models.CharField(max_length=50, default=False)
 
     objects = managers.QuestionnaireManager()
+
+    # Audit history
+    created_date = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+
     history = HistoricalRecords()
 
     class Meta:
@@ -111,6 +116,10 @@ class QuestionGroup(MultilingualLabelsMixin, RandomIDModel):
 
     objects = managers.QuestionGroupManager()
 
+    # Audit history
+    created_date = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+
     history = HistoricalRecords()
 
     def __repr__(self):
@@ -167,6 +176,10 @@ class Question(MultilingualLabelsMixin, RandomIDModel):
 
     objects = managers.QuestionManager()
 
+    # Audit history
+    created_date = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+
     history = HistoricalRecords()
 
     def __repr__(self):
@@ -195,6 +208,10 @@ class QuestionOption(MultilingualLabelsMixin, RandomIDModel):
     label_xlat = JSONField(default={})
     index = models.IntegerField(null=False)
     question = models.ForeignKey(Question, related_name='options')
+
+    # Audit history
+    created_date = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
 
     history = HistoricalRecords()
 

@@ -46,7 +46,11 @@ class Organization(SlugModel, RandomIDModel):
     # TEMPORARY:
     logo = models.URLField(null=True)
     # logo = TemporalForeignKey('Resource')
+
+    # Audit history
+    created_date = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+
     access = models.CharField(
         default="public", choices=ACCESS_CHOICES, max_length=8
     )
@@ -117,6 +121,10 @@ class OrganizationRole(RandomIDModel):
     user = models.ForeignKey('accounts.User')
     admin = models.BooleanField(default=False)
 
+    # Audit history
+    created_date = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+
     history = HistoricalRecords()
 
     class Meta:
@@ -186,6 +194,10 @@ class Project(ResourceModelMixin, SlugModel, RandomIDModel):
     current_questionnaire = models.CharField(
         max_length=24, null=True, blank=True
     )
+
+    # Audit history
+    created_date = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
 
     history = HistoricalRecords()
 
