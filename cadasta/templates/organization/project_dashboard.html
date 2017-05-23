@@ -3,6 +3,7 @@
 {% load i18n %}
 {% load leaflet_tags %}
 {% load staticfiles %}
+{% load filters %}
 
 {% block extra_head %}
 {% leaflet_css plugins="groupedlayercontrol"%}
@@ -107,6 +108,10 @@
                 {% endblocktrans %}
               </li>
             </ul>
+            
+            {% if total_area %}
+            <div style="text-align:right;padding:10px;"><b>Total Area:</b> {{ total_area | format_area_metric_units | safe }}</div>  
+            {% endif %}
           {% else %}
             <!-- Starter text -->
             <h3 style="text-transform: capitalize;">{% trans "Congratulations!" %}</h3>
