@@ -18,4 +18,3 @@ class BackgroundTaskFactory(ExtendedFactory):
     type = 'foo.bar'
     input = factory.LazyFunction(input_field_default)
     creator = factory.SubFactory(UserFactory)
-    schedule_task_on_create = False
