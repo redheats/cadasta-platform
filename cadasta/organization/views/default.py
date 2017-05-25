@@ -706,16 +706,16 @@ class ProjectDataDownload(mixins.ProjectMixin,
         kwargs['user'] = self.request.user
         return kwargs
 
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        form = self.get_form()
-        if form.is_valid():
-            path, mime_type = form.get_file()
-            filename, ext = os.path.splitext(path)
-            response = HttpResponse(open(path, 'rb'), content_type=mime_type)
-            response['Content-Disposition'] = ('attachment; filename=' +
-                                               self.object.slug + ext)
-            return response
+    # def post(self, request, *args, **kwargs):
+    #     self.object = self.get_object()
+    #     form = self.get_form()
+    #     if form.is_valid():
+    #         path, mime_type = form.get_file()
+    #         filename, ext = os.path.splitext(path)
+    #         response = HttpResponse(open(path, 'rb'), content_type=mime_type)
+    #         response['Content-Disposition'] = ('attachment; filename=' +
+    #                                            self.object.slug + ext)
+    #         return response
 
 
 DATA_IMPORT_FORMS = [('select_file', forms.SelectImportForm),
