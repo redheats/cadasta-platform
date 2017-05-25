@@ -28,6 +28,10 @@ urlpatterns = [
         api.ProjectDetail.as_view(),
         name='project_detail'),
     url(
+        r'^(?P<organization>[-\w]+)/projects/(?P<project>[-\w]+)/download/$',
+        api.ProjectDownload.as_view(),
+        name='project_download'),
+    url(
         r'^(?P<organization>[-\w]+)/projects/(?P<project>[-\w]+)/users/$',
         api.ProjectUsers.as_view(),
         name='project_users'),

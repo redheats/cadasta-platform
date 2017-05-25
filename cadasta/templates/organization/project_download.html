@@ -4,8 +4,9 @@
 
 
 {% block content %}
-<form method="POST" class="col-md-12 content-single" data-parsley-validate>
+<form class="col-md-12 content-single" method="GET" action="{% url 'api:v1:organization:project_download' organization=project.organization.slug project=project.slug %}" data-parsley-validate>
   {% csrf_token %}
+  <input type="hidden" name="format" value="json" />
   <div class="row">
     <!-- Main text  -->
     <div class="col-md-12 main-text">
