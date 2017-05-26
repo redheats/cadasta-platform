@@ -10,7 +10,6 @@ from tutelary.decorators import permissioned_model
 from simple_history.models import HistoricalRecords
 from shapely.geometry import Point, Polygon, LineString
 from shapely.wkt import dumps
-from django.contrib.postgres.fields import JSONField
 
 from . import messages, managers
 from .choices import TYPE_CHOICES
@@ -39,10 +38,6 @@ class SpatialUnit(ResourceModelMixin, RandomIDModel):
     # Spatial unit geometry is optional: some spatial units may only
     # have a textual description of their location.
     geometry = GeometryField(null=True)
-
-    # Spatial unit area is optional: some spatial units may only
-    # have a textual description of their location.
-    geometry_details = JSONField(null=True)
 
     # JSON attributes field with management of allowed members.
     attributes = JSONAttributeField(default={})
@@ -146,18 +141,6 @@ def reassign_spatial_geometry(instance):
         instance.geometry = dumps(Point(geometry))
 
 
-def calculate_polygon_area(instance):
-    # Referece for metric conversions equations
-    # http://www.metric-conversions.org/area/square-meters-to-hectares.htm
-    poly = instance.geometry
-    poly_trans = poly.transform(3857, clone=True)
-    area = poly_trans.area
-    data = {
-        'area': format(area, '.2f')
-    }
-    instance.geometry_details = data
-
-
 @receiver(models.signals.pre_save, sender=SpatialUnit)
 def check_extent(sender, instance, **kwargs):
     geom = instance.geometry
@@ -171,16 +154,6 @@ def check_extent(sender, instance, **kwargs):
 
     if geom and not geom.empty:
         reassign_spatial_geometry(instance)
-
-
-@receiver(models.signals.pre_save, sender=SpatialUnit)
-def define_geometry_details(sender, instance, **kwargs):
-    geom = instance.geometry
-    from django.contrib.gis.geos.polygon import Polygon
-    if geom and isinstance(geom, Polygon) and geom.valid:
-        calculate_polygon_area(instance)
-    else:
-        instance.geometry_details = None
 
 
 @fix_model_for_attributes
