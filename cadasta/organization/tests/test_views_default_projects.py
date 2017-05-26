@@ -418,7 +418,8 @@ class ProjectDashboardTest(FileStorageTestCase, ViewTestCase, UserTestCase,
         assert response.content == expected
 
     def test_get_with_overview_stats(self):
-        SpatialUnitFactory.create(project=self.project)
+        SpatialUnitFactory.create(project=self.project, geometry='SRID=4326;POLYGON \
+             ((30 10, 20 20, 20 20, 10 20, 30 10))')
         PartyFactory.create(project=self.project)
         ResourceFactory.create(project=self.project)
         ResourceFactory.create(project=self.project, archived=True)
@@ -427,7 +428,8 @@ class ProjectDashboardTest(FileStorageTestCase, ViewTestCase, UserTestCase,
         assert response.content == self.render_content(has_content=True,
                                                        num_locations=1,
                                                        num_parties=1,
-                                                       num_resources=1)
+                                                       num_resources=1,
+                                                       total_area=642391915500)
         assert "<div class=\"num\">1</div> location" in response.content
         assert "<div class=\"num\">1</div> party" in response.content
         assert "<div class=\"num\">1</div> resource" in response.content
