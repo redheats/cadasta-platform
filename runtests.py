@@ -13,9 +13,9 @@ PYTEST_ARGS = {
     'fast': BASE_PYTEST_ARGS + ['-q']
 }
 
-BASE_PYTEST_ARGS_FUNCTIONAL = []
+BASE_PYTEST_ARGS_FUNCTIONAL = ['--pyargs', 'cadasta.test']
 PYTEST_ARGS_FUNCTIONAL = {
-    'default': BASE_PYTEST_ARGS_FUNCTIONAL,
+    'default': BASE_PYTEST_ARGS_FUNCTIONAL + ['-v'],
     'fast': BASE_PYTEST_ARGS_FUNCTIONAL + ['-q'],
 }
 
@@ -62,8 +62,17 @@ def flake8_main(args):
 
 def functional_main(args):
     print('Running functional tests')
-    ret = subprocess.run(['./run.py'] + args,
-                         cwd='./functional_tests').returncode
+    django_settings_module = None
+    if 'DJANGO_SETTINGS_MODULE' in os.environ:
+        django_settings_module = os.environ['DJANGO_SETTINGS_MODULE']
+        del os.environ['DJANGO_SETTINGS_MODULE']
+    devnull = subprocess.DEVNULL
+    xvfb = subprocess.Popen(["Xvfb", ":1"], stdout=devnull, stderr=devnull)
+    os.environ['DISPLAY'] = ':1'
+    ret = pytest.main(args)
+    xvfb.terminate()
+    if django_settings_module:
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', django_settings_module)
     print('Functional tests failed' if ret else 'Functional tests passed')
     return ret
 
@@ -130,7 +139,8 @@ if __name__ == "__main__":
     else:
         pytest_args = PYTEST_ARGS[style]
 
-        if os.environ['DJANGO_SETTINGS_MODULE'] == 'config.settings.travis':
+        django_settings_module = os.environ.get('DJANGO_SETTINGS_MODULE')
+        if django_settings_module == 'config.settings.travis':
             pytest_args = pytest_args + ['--disable-pytest-warnings', '--ds=config.settings.travis']
 
         pytest_args_functional = PYTEST_ARGS_FUNCTIONAL[style]
