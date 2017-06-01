@@ -73,6 +73,9 @@ async = [
     url(r'^',
         include('resources.urls.async',
                 namespace='resources')),
+    url(r'^',
+        include('party.urls.async',
+                namespace='party')),
 ]
 
 urlpatterns = [
