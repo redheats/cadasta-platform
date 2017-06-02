@@ -1,7 +1,7 @@
 Django==1.11.2
 djangorestframework==3.6.3
 psycopg2==2.7.1
-djoser==0.5.4
+djoser==0.6.0
 django-allauth==0.32.0
 django-cors-headers==2.1.0
 django-filter==1.0.4
