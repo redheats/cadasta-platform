@@ -72,7 +72,7 @@ def functional_main(args):
     ret = pytest.main(args)
     xvfb.terminate()
     if django_settings_module:
-        os.environ.setdefault('DJANGO_SETTINGS_MODULE', django_settings_module)
+        os.environ['DJANGO_SETTINGS_MODULE'] = django_settings_module
     print('Functional tests failed' if ret else 'Functional tests passed')
     return ret
 
