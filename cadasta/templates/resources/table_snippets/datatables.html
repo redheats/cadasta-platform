@@ -4,6 +4,10 @@
 window.addEventListener('load', function() {
   $('#resource-list').DataTable({
     serverSide: true,
+    columnDefs: [{
+      targets: 4,
+      orderable: false
+    }],
     drawCallback: function (settings) {
       var response = this.api().ajax.json().tbody;
       $('#resource-list tbody').html(this.api().ajax.json().tbody);

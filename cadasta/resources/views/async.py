@@ -7,15 +7,17 @@ from tutelary.mixins import APIPermissionRequiredMixin
 from rest_framework import generics
 from rest_framework.response import Response
 from organization.views.mixins import ProjectMixin
-from core.views.mixins import SuperUserCheckMixin
+from core.views.mixins import SuperUserCheckMixin, AsyncList
 from ..models import ContentObject
 
 
 class ResourceList(APIPermissionRequiredMixin,
                    SuperUserCheckMixin,
+                   AsyncList,
                    ProjectMixin,
                    generics.ListAPIView):
-    columns = ('name', 'mime_type', 'contributor__username', 'last_updated')
+    sort_columns = ('name', 'mime_type', 'contributor__username',
+                    'last_updated')
     content_object = 'organization.Project'
     template = 'resources/table_snippets/resource.html'
 
@@ -60,32 +62,12 @@ class ResourceList(APIPermissionRequiredMixin,
                 id=self.kwargs['object_id']
             )
 
-    def get_results(self):
-        query = self.request.GET
-        qs = self.get_queryset()
-
-        records_total = qs.count()
-        # filter the queryset if a search term was provided
-        search = query.get('search[value]')
-        if search:
-            qs = qs.filter(Q(name__contains=search) |
-                           Q(original_file__contains=search) |
-                           Q(mime_type__contains=search) |
-                           Q(contributor__username__contains=search) |
-                           Q(contributor__full_name__contains=search))
-        records_filtered = qs.count()
-
-        # set the ordering for the queryset
-        order_col = int(query.get('order[0][column]', 0))
-        order_dir = '' if query.get('order[0][dir]', 'asc') == 'asc' else '-'
-        qs = qs.order_by(order_dir + self.columns[order_col])
-
-        # Slice the queryset to results for the current page
-        offset = int(query.get('start', 0))
-        limit = int(query.get('length', 10)) + offset
-        qs = qs[offset:limit]
-
-        return qs, records_total, records_filtered
+    def build_search_query(self, term):
+        return (Q(name__contains=term) |
+                Q(original_file__contains=term) |
+                Q(mime_type__contains=term) |
+                Q(contributor__username__contains=term) |
+                Q(contributor__full_name__contains=term))
 
     def get(self, *args, **kwargs):
         qs, records_total, records_filtered = self.get_results()
