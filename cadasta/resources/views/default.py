@@ -6,6 +6,7 @@ from django.core.urlresolvers import reverse
 from django.forms import ValidationError
 from django.http import Http404
 from organization.views import mixins as organization_mixins
+from organization.views.mixins import ProjectMixin
 
 from . import mixins
 from .. import messages as error_messages
@@ -38,24 +39,35 @@ class ProjectResources(LoginPermissionRequiredMixin,
 
 
 class ProjectResourcesAdd(LoginPermissionRequiredMixin,
-                          mixins.ProjectResourceMixin,
-                          base_generic.edit.FormMixin,
+                          ProjectMixin,
+                          mixins.ResourceViewMixin,
+                          # base_generic.edit.FormMixin,
                           organization_mixins.ProjectAdminCheckMixin,
                           generic.DetailView):
     template_name = 'resources/project_add_existing.html'
-    form_class = AddResourceFromLibraryForm
+    # form_class = AddResourceFromLibraryForm
     permission_required = update_permissions('resource.add')
     permission_denied_message = error_messages.RESOURCE_ADD
 
     def get_object(self):
         return self.get_project()
 
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        form = self.get_form()
-        if form.is_valid():
-            form.save()
-            return self.form_valid(form)
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+
+        project = self.get_project()
+        context['object'] = project
+        context['resource_src'] = reverse(
+            'async:resources:list',
+            args=[project.organization.slug, project.slug])
+        return context
+
+    # def post(self, request, *args, **kwargs):
+    #     self.object = self.get_object()
+    #     form = self.get_form()
+    #     if form.is_valid():
+    #         form.save()
+    #         return self.form_valid(form)
 
 
 class ProjectResourcesNew(LoginPermissionRequiredMixin,
