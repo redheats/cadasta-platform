@@ -488,6 +488,36 @@ class ProjectResourcesAddTest(APITestCase, UserTestCase, TestCase):
         assert (remove_csrf(response.content['tbody']) ==
                 self.render_html_snippet(resources))
 
+    def test_post_resource(self):
+        unattached = ResourceFactory.create(project=self.project)
+        assign_policies(self.user)
+        response = self.request(
+            user=self.user,
+            method='POST',
+            post_data={'resource': unattached.id})
+        assert response.status_code == 201
+        self.project.reload_resources()
+        assert unattached in self.project.resources
+
+    def test_post_resource_of_different_project(self):
+        unattached = ResourceFactory.create()
+        assign_policies(self.user)
+        response = self.request(
+            user=self.user,
+            method='POST',
+            post_data={'resource': unattached.id})
+        assert response.status_code == 400
+        self.project.reload_resources()
+        assert unattached not in self.project.resources
+
+    def test_post_attached_resource(self):
+        assign_policies(self.user)
+        response = self.request(
+            user=self.user,
+            method='POST',
+            post_data={'resource': self.attached.id})
+        assert response.status_code == 400
+
 
 class PartyResourcesTest(APITestCase, UserTestCase, TestCase):
     view_class = ResourceList

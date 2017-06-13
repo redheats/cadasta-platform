@@ -1,3 +1,4 @@
+from django.utils.translation import ugettext as _
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -109,12 +110,8 @@ class ResourceAdd(ResourcesView):
         content_object = self.get_content_object()
         attached = content_object.resources.values_list('id', flat=True)
 
-        if self.content_object == 'organization.Project':
-            qs = self.get_project().resource_set
-        else:
-            qs = self.get_content_object().resources
-
-        qs = qs.exclude(id__in=attached).select_related('contributor')
+        qs = self.get_project().resource_set.exclude(
+            id__in=attached).select_related('contributor')
 
         if not self.is_superuser or self.get_org_role() is not None:
             return qs.filter(archived=False)
@@ -137,3 +134,21 @@ class ResourceAdd(ResourcesView):
                 },
                 request=self.request)
         })
+
+    def post(self, *args, **kwargs):
+        content_object = self.get_content_object()
+        qs = self.get_queryset().values_list('id', flat=True)
+
+        resource_to_add = self.request.data['resource']
+        if resource_to_add in qs:
+            ContentObject.objects.create(
+                resource_id=resource_to_add,
+                content_object=content_object
+            )
+            return Response(status=201)
+        else:
+            return Response(
+                data={'detail': _("The resource either is not added to the "
+                                  "project or already attached to this "
+                                  "object.")},
+                status=400)
