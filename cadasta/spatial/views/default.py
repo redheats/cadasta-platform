@@ -161,21 +161,23 @@ class LocationDelete(LoginPermissionRequiredMixin,
 
 
 class LocationResourceAdd(LoginPermissionRequiredMixin,
-                          mixins.SpatialUnitResourceMixin,
-                          base_generic.edit.FormMixin,
+                          mixins.SpatialUnitObjectMixin,
                           organization_mixins.ProjectAdminCheckMixin,
                           generic.DetailView):
     template_name = 'spatial/resources_add.html'
-    form_class = AddResourceFromLibraryForm
     permission_required = update_permissions('spatial.resources.add')
     permission_denied_message = error_messages.SPATIAL_ADD_RESOURCE
 
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        form = self.get_form()
-        if form.is_valid():
-            form.save()
-            return self.form_valid(form)
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+
+        url_kwargs = self.kwargs
+        url_kwargs['object_id'] = url_kwargs.pop('location')
+
+        context['resource_lib'] = reverse(
+            'async:resources:add_to_location',
+            kwargs=url_kwargs)
+        return context
 
 
 class LocationResourceNew(LoginPermissionRequiredMixin,

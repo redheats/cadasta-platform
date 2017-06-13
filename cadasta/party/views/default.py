@@ -180,21 +180,23 @@ class PartiesDelete(LoginPermissionRequiredMixin,
 
 
 class PartyResourcesAdd(LoginPermissionRequiredMixin,
-                        mixins.PartyResourceMixin,
+                        mixins.PartyObjectMixin,
                         organization_mixins.ProjectAdminCheckMixin,
-                        base_generic.edit.FormMixin,
                         generic.DetailView):
     template_name = 'party/resources_add.html'
-    form_class = AddResourceFromLibraryForm
     permission_required = update_permissions('party.resources.add')
     permission_denied_message = error_messages.PARTY_RESOURCES_ADD
 
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        form = self.get_form()
-        if form.is_valid():
-            form.save()
-            return self.form_valid(form)
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+
+        url_kwargs = self.kwargs
+        url_kwargs['object_id'] = url_kwargs.pop('party')
+
+        context['resource_lib'] = reverse(
+            'async:resources:add_to_party',
+            kwargs=url_kwargs)
+        return context
 
 
 class PartyResourcesNew(LoginPermissionRequiredMixin,
@@ -297,13 +299,16 @@ class PartyRelationshipResourceAdd(LoginPermissionRequiredMixin,
                                    base_generic.edit.FormMixin,
                                    generic.DetailView):
     template_name = 'party/relationship_resources_add.html'
-    form_class = AddResourceFromLibraryForm
     permission_required = update_permissions('tenure_rel.resources.add')
     permission_denied_message = error_messages.TENURE_REL_RESOURCES_ADD
 
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        form = self.get_form()
-        if form.is_valid():
-            form.save()
-            return self.form_valid(form)
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+
+        url_kwargs = self.kwargs
+        url_kwargs['object_id'] = url_kwargs.pop('relationship')
+
+        context['resource_lib'] = reverse(
+            'async:resources:add_to_relationship',
+            kwargs=url_kwargs)
+        return context

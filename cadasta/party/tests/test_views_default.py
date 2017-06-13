@@ -853,31 +853,25 @@ class PartyResourcesAddTest(ViewTestCase, UserTestCase, TestCase):
     def setup_models(self):
         self.project = ProjectFactory.create()
         self.party = PartyFactory.create(project=self.project)
-        self.attached = ResourceFactory.create(project=self.project,
-                                               content_object=self.party)
-        self.unattached = ResourceFactory.create(project=self.project)
 
     def setup_template_context(self):
-        form = AddResourceFromLibraryForm(content_object=self.party,
-                                          project_id=self.project.id)
+        url_kwargs = {
+            'organization': self.project.organization.slug,
+            'project': self.project.slug,
+            'object_id': self.party.id
+        }
+
         return {'object': self.project,
                 'party': self.party,
-                'form': form}
+                'resource_lib': reverse(
+                    'async:resources:add_to_party',
+                    kwargs=url_kwargs)}
 
     def setup_url_kwargs(self):
         return {
             'organization': self.project.organization.slug,
             'project': self.project.slug,
             'party': self.party.id
-        }
-
-    def setup_success_url_kwargs(self):
-        return self.setup_url_kwargs()
-
-    def setup_post_data(self):
-        return {
-            self.attached.id: False,
-            self.unattached.id: True,
         }
 
     def test_get_with_authorized_user(self):
@@ -918,47 +912,6 @@ class PartyResourcesAddTest(ViewTestCase, UserTestCase, TestCase):
         user = UserFactory.create()
         assign_policies(user)
         response = self.request(user=user)
-        assert response.status_code == 302
-        assert ("You don't have permission to add resources to this party"
-                in response.messages)
-
-    def test_post_with_authorized_user(self):
-        user = UserFactory.create()
-        assign_policies(user)
-        response = self.request(method='POST', user=user)
-        assert response.status_code == 302
-        assert response.location == self.expected_success_url + '#resources'
-
-        party_resources = self.party.resources.all()
-        assert len(party_resources) == 2
-        assert self.attached in party_resources
-        assert self.unattached in party_resources
-
-    def test_post_with_unauthorized_user(self):
-        user = UserFactory.create()
-        response = self.request(method='POST', user=user)
-        assert response.status_code == 302
-        assert ("You don't have permission to add resources to this party"
-                in response.messages)
-
-        assert self.party.resources.count() == 1
-        assert self.party.resources.first() == self.attached
-
-    def test_post_with_unauthenticated_user(self):
-        response = self.request(method='POST')
-        assert response.status_code == 302
-        assert '/account/login/' in response.location
-
-        assert self.party.resources.count() == 1
-        assert self.party.resources.first() == self.attached
-
-    def test_post_with_archived_project(self):
-        self.project.archived = True
-        self.project.save()
-
-        user = UserFactory.create()
-        assign_policies(user)
-        response = self.request(method='POST', user=user)
         assert response.status_code == 302
         assert ("You don't have permission to add resources to this party"
                 in response.messages)
@@ -1511,32 +1464,26 @@ class PartyRelationshipResourceAddTest(ViewTestCase, UserTestCase, TestCase):
         self.project = ProjectFactory.create()
         self.relationship = TenureRelationshipFactory.create(
             project=self.project)
-        self.attached = ResourceFactory.create(
-            project=self.project, content_object=self.relationship)
-        self.unattached = ResourceFactory.create(project=self.project)
 
     def setup_template_context(self):
-        form = AddResourceFromLibraryForm(content_object=self.relationship,
-                                          project_id=self.project.id)
+        url_kwargs = {
+            'organization': self.project.organization.slug,
+            'project': self.project.slug,
+            'object_id': self.relationship.id
+        }
+
         return {'object': self.project,
                 'relationship': self.relationship,
                 'location': self.relationship.spatial_unit,
-                'form': form}
+                'resource_lib': reverse(
+                    'async:resources:add_to_relationship',
+                    kwargs=url_kwargs)}
 
     def setup_url_kwargs(self):
         return {
             'organization': self.project.organization.slug,
             'project': self.project.slug,
             'relationship': self.relationship.id
-        }
-
-    def setup_success_url_kwargs(self):
-        return self.setup_url_kwargs()
-
-    def setup_post_data(self):
-        return {
-            self.attached.id: False,
-            self.unattached.id: True,
         }
 
     def test_get_with_authorized_user(self):
@@ -1582,52 +1529,6 @@ class PartyRelationshipResourceAddTest(ViewTestCase, UserTestCase, TestCase):
         assert ("You don't have permission to add resources to this tenure "
                 "relationship."
                 in response.messages)
-
-    def test_post_with_authorized_user(self):
-        user = UserFactory.create()
-        assign_policies(user)
-        response = self.request(method='POST', user=user)
-        assert response.status_code == 302
-        assert response.location == self.expected_success_url
-
-        relationship_resources = self.relationship.resources.all()
-        assert len(relationship_resources) == 2
-        assert self.attached in relationship_resources
-        assert self.unattached in relationship_resources
-
-    def test_post_with_unauthorized_user(self):
-        user = UserFactory.create()
-        response = self.request(method='POST', user=user)
-        assert response.status_code == 302
-        assert ("You don't have permission to add resources to this tenure "
-                "relationship."
-                in response.messages)
-
-        assert self.relationship.resources.count() == 1
-        assert self.relationship.resources.first() == self.attached
-
-    def test_post_with_unauthenticated_user(self):
-        response = self.request(method='POST')
-        assert response.status_code == 302
-        assert '/account/login/' in response.location
-
-        assert self.relationship.resources.count() == 1
-        assert self.relationship.resources.first() == self.attached
-
-    def test_post_with_archived_project(self):
-        self.project.archived = True
-        self.project.save()
-
-        user = UserFactory.create()
-        assign_policies(user)
-        response = self.request(method='POST', user=user)
-        assert response.status_code == 302
-        assert ("You don't have permission to add resources to this tenure "
-                "relationship."
-                in response.messages)
-
-        assert self.relationship.resources.count() == 1
-        assert self.relationship.resources.first() == self.attached
 
 
 @pytest.mark.usefixtures('make_dirs')

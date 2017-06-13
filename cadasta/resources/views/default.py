@@ -41,11 +41,9 @@ class ProjectResources(LoginPermissionRequiredMixin,
 class ProjectResourcesAdd(LoginPermissionRequiredMixin,
                           ProjectMixin,
                           mixins.ResourceViewMixin,
-                          # base_generic.edit.FormMixin,
                           organization_mixins.ProjectAdminCheckMixin,
                           generic.DetailView):
     template_name = 'resources/project_add_existing.html'
-    # form_class = AddResourceFromLibraryForm
     permission_required = update_permissions('resource.add')
     permission_denied_message = error_messages.RESOURCE_ADD
 
@@ -64,13 +62,6 @@ class ProjectResourcesAdd(LoginPermissionRequiredMixin,
             'async:resources:add_to_project',
             args=[project.organization.slug, project.slug])
         return context
-
-    # def post(self, request, *args, **kwargs):
-    #     self.object = self.get_object()
-    #     form = self.get_form()
-    #     if form.is_valid():
-    #         form.save()
-    #         return self.form_valid(form)
 
 
 class ProjectResourcesNew(LoginPermissionRequiredMixin,

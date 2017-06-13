@@ -800,24 +800,24 @@ class LocationResourceAddTest(ViewTestCase, UserTestCase, TestCase):
         self.unattached = ResourceFactory.create(project=self.project)
 
     def setup_template_context(self):
-        form = AddResourceFromLibraryForm(content_object=self.location,
-                                          project_id=self.project.id)
+        url_kwargs = {
+            'organization': self.project.organization.slug,
+            'project': self.project.slug,
+            'object_id': self.location.id
+        }
+
         return {'object': self.project,
                 'location': self.location,
-                'form': form,
-                'is_allowed_add_location': True}
+                'is_allowed_add_location': True,
+                'resource_lib': reverse(
+                    'async:resources:add_to_location',
+                    kwargs=url_kwargs)}
 
     def setup_url_kwargs(self):
         return {
             'organization': self.project.organization.slug,
             'project': self.project.slug,
             'location': self.location.id
-        }
-
-    def setup_post_data(self):
-        return {
-            self.attached.id: False,
-            self.unattached.id: True,
         }
 
     def test_get_with_authorized_user(self):
@@ -860,46 +860,6 @@ class LocationResourceAddTest(ViewTestCase, UserTestCase, TestCase):
         assert response.status_code == 302
         assert ("You don't have permission to "
                 "add resources to this location." in response.messages)
-
-    def test_post_with_authorized_user(self):
-        user = UserFactory.create()
-        assign_policies(user)
-        response = self.request(method='POST', user=user)
-        assert response.status_code == 302
-        assert response.location == self.expected_success_url + '#resources'
-
-        location_resources = self.location.resources.all()
-        assert len(location_resources) == 2
-        assert self.attached in location_resources
-        assert self.unattached in location_resources
-
-    def test_post_with_unauthorized_user(self):
-        user = UserFactory.create()
-        response = self.request(method='POST', user=user)
-        assert response.status_code == 302
-        assert ("You don't have permission to "
-                "add resources to this location." in response.messages)
-        assert self.location.resources.count() == 1
-        assert self.location.resources.first() == self.attached
-
-    def test_post_with_unauthenticated_user(self):
-        response = self.request(method='POST')
-        assert response.status_code == 302
-        assert '/account/login/' in response.location
-        assert self.location.resources.count() == 1
-        assert self.location.resources.first() == self.attached
-
-    def test_post_with_archived_project(self):
-        self.project.archived = True
-        self.project.save()
-        user = UserFactory.create()
-        assign_policies(user)
-        response = self.request(method='POST', user=user)
-        assert response.status_code == 302
-        assert ("You don't have permission to "
-                "add resources to this location." in response.messages)
-        assert self.location.resources.count() == 1
-        assert self.location.resources.first() == self.attached
 
 
 @pytest.mark.usefixtures('make_dirs')
