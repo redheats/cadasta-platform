@@ -9,8 +9,9 @@ window.addEventListener('load', function() {
       orderable: false
     }],
     drawCallback: function (settings) {
-      var response = this.api().ajax.json().tbody;
-      $(this).find('tbody').html(this.api().ajax.json().tbody);
+      var dataTable = this;
+      var response = dataTable.api().ajax.json().tbody;
+      $(dataTable).find('tbody').html(dataTable.api().ajax.json().tbody);
 
       // Link each resource row to its resource detail page
       $('tr.linked-resource').bind('click', function(e) {
@@ -20,14 +21,28 @@ window.addEventListener('load', function() {
       // Activate restore deleted modal on restore buttons
       $('button.restore').bind('click', function(e) {
         // This is needed to counter the row-click event handler
-        e.stopPropagation();
+        
         $('#undelete_resource_confirm .modal-footer a').attr('href', e.currentTarget.dataset.unarchiveUrl + '?next=' + window.location.pathname);
         $('#undelete_resource_confirm').modal();
       });
+
+      $('form.attach').bind('click', function (e) {
+        e.stopPropagation();
+      });
+
+      $('form.attach').on('submit', function (e) {
+        e.preventDefault();
+
+        $.ajax({
+          method: 'POST',
+          url: $(this).attr('action'),
+          data: $(this).serializeArray(),
+          success: function (data) {
+            dataTable.api().ajax.reload();
+          }
+        });
+      });
     },
-    // ajax: {
-    //   url: $('#resource-list').attr('data-src'),
-    // },
     dom: '<"table-search clearfix"f>t<"table-pagination"p><"table-entries"i><"table-num"l>',
     language: {
       emptyTable:     "{% trans "No data available in table" %}",

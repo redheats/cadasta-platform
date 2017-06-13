@@ -130,7 +130,8 @@ class ResourceAdd(ResourcesView):
                 self.template,
                 context={
                     'resources': qs,
-                    'project': self.get_project()
+                    'project': self.get_project(),
+                    'resource_lib': self.request.path,
                 },
                 request=self.request)
         })

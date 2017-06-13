@@ -27,8 +27,9 @@
     {% endif %}
   </td>
   <td>
-    <form method="POST" action="">
+    <form method="POST" action="{{ resource_lib }}" class="attach">
       {% csrf_token %}
+      <input type="hidden" name="resource" value="{{ resource.id }}">
       <button type="submit" class="btn btn-primary btn-sm" role="button">
         <span class="glyphicon glyphicon-add" aria-hidden="true"></span> {% trans "Attach" %}
       </button>

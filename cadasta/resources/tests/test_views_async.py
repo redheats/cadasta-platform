@@ -303,7 +303,8 @@ class ProjectResourcesAddTest(APITestCase, UserTestCase, TestCase):
         html = render_to_string(
             'resources/table_snippets/resource_add.html',
             context={'resources': resources,
-                     'project': self.project},
+                     'project': self.project,
+                     'resource_lib': '/'},
             request=RequestFactory().get('/'))
 
         return remove_csrf(html)
