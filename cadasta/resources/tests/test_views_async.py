@@ -577,6 +577,84 @@ class PartyResourcesTest(APITestCase, UserTestCase, TestCase):
                 self.render_html_snippet(resources))
 
 
+class PartyResourcesAddTest(APITestCase, UserTestCase, TestCase):
+    view_class = ResourceAdd
+    get_data = {'draw': '1', 'start': 0, 'length': 10, 'order[0][column]': 0}
+
+    def setup_models(self):
+        self.user = UserFactory.create()
+        self.project = ProjectFactory.create()
+        self.party = PartyFactory.create(project=self.project)
+        self.attached = ResourceFactory.create(project=self.project,
+                                               content_object=self.party)
+        ResourceFactory.create_batch(5,
+                                     project=self.project)
+
+    def setup_url_kwargs(self):
+        return {
+            'organization': self.project.organization.slug,
+            'project': self.project.slug,
+            'object_id': self.party.id
+        }
+
+    def render_html_snippet(self, resources):
+        html = render_to_string(
+            'resources/table_snippets/resource_add.html',
+            context={'resources': resources,
+                     'project': self.project,
+                     'resource_lib': '/'},
+            request=RequestFactory().get('/'))
+
+        return remove_csrf(html)
+
+    def test_get_default(self):
+        assign_policies(self.user)
+        response = self.request(user=self.user,
+                                view_kwargs={'content_object': 'party.Party'})
+        assert response.status_code == 200
+        assert response.content['draw'] == 1
+        assert response.content['recordsTotal'] == 5
+        assert response.content['recordsFiltered'] == 5
+
+        resources = self.project.resource_set.exclude(
+            id=self.attached.id).order_by('name')
+        assert (remove_csrf(response.content['tbody']) ==
+                self.render_html_snippet(resources))
+
+    def test_post_resource(self):
+        unattached = ResourceFactory.create(project=self.project)
+        assign_policies(self.user)
+        response = self.request(
+            user=self.user,
+            method='POST',
+            post_data={'resource': unattached.id},
+            view_kwargs={'content_object': 'party.Party'})
+        assert response.status_code == 201
+        self.party.reload_resources()
+        assert unattached in self.party.resources
+
+    def test_post_resource_of_different_project(self):
+        unattached = ResourceFactory.create()
+        assign_policies(self.user)
+        response = self.request(
+            user=self.user,
+            method='POST',
+            post_data={'resource': unattached.id},
+            view_kwargs={'content_object': 'party.Party'})
+        assert response.status_code == 400
+        self.party.reload_resources()
+        assert unattached not in self.party.resources
+
+    def test_post_attached_resource(self):
+        assign_policies(self.user)
+        response = self.request(
+            user=self.user,
+            method='POST',
+            post_data={'resource': self.attached.id},
+            view_kwargs={'content_object': 'party.Party'})
+        assert response.status_code == 400
+
+
 class RelationshipResourcesTest(APITestCase, UserTestCase, TestCase):
     view_class = ResourceList
     get_data = {'draw': '1', 'start': 0, 'length': 10, 'order[0][column]': 0}
@@ -636,6 +714,87 @@ class RelationshipResourcesTest(APITestCase, UserTestCase, TestCase):
                 self.render_html_snippet(resources))
 
 
+class RelationshipResourcesAddTest(APITestCase, UserTestCase, TestCase):
+    view_class = ResourceAdd
+    get_data = {'draw': '1', 'start': 0, 'length': 10, 'order[0][column]': 0}
+
+    def setup_models(self):
+        self.user = UserFactory.create()
+        self.project = ProjectFactory.create()
+        self.relationship = TenureRelationshipFactory.create(
+            project=self.project)
+        self.attached = ResourceFactory.create(
+            project=self.project,
+            content_object=self.relationship)
+        ResourceFactory.create_batch(5,
+                                     project=self.project)
+
+    def setup_url_kwargs(self):
+        return {
+            'organization': self.project.organization.slug,
+            'project': self.project.slug,
+            'object_id': self.relationship.id
+        }
+
+    def render_html_snippet(self, resources):
+        html = render_to_string(
+            'resources/table_snippets/resource_add.html',
+            context={'resources': resources,
+                     'project': self.project,
+                     'resource_lib': '/'},
+            request=RequestFactory().get('/'))
+
+        return remove_csrf(html)
+
+    def test_get_default(self):
+        assign_policies(self.user)
+        response = self.request(
+            user=self.user,
+            view_kwargs={'content_object': 'party.TenureRelationship'})
+        assert response.status_code == 200
+        assert response.content['draw'] == 1
+        assert response.content['recordsTotal'] == 5
+        assert response.content['recordsFiltered'] == 5
+
+        resources = self.project.resource_set.exclude(
+            id=self.attached.id).order_by('name')
+        assert (remove_csrf(response.content['tbody']) ==
+                self.render_html_snippet(resources))
+
+    def test_post_resource(self):
+        unattached = ResourceFactory.create(project=self.project)
+        assign_policies(self.user)
+        response = self.request(
+            user=self.user,
+            method='POST',
+            post_data={'resource': unattached.id},
+            view_kwargs={'content_object': 'party.TenureRelationship'})
+        assert response.status_code == 201
+        self.relationship.reload_resources()
+        assert unattached in self.relationship.resources
+
+    def test_post_resource_of_different_project(self):
+        unattached = ResourceFactory.create()
+        assign_policies(self.user)
+        response = self.request(
+            user=self.user,
+            method='POST',
+            post_data={'resource': unattached.id},
+            view_kwargs={'content_object': 'party.TenureRelationship'})
+        assert response.status_code == 400
+        self.relationship.reload_resources()
+        assert unattached not in self.relationship.resources
+
+    def test_post_attached_resource(self):
+        assign_policies(self.user)
+        response = self.request(
+            user=self.user,
+            method='POST',
+            post_data={'resource': self.attached.id},
+            view_kwargs={'content_object': 'party.TenureRelationship'})
+        assert response.status_code == 400
+
+
 class LocationResourcesTest(APITestCase, UserTestCase, TestCase):
     view_class = ResourceList
     get_data = {'draw': '1', 'start': 0, 'length': 10, 'order[0][column]': 0}
@@ -693,3 +852,84 @@ class LocationResourcesTest(APITestCase, UserTestCase, TestCase):
         resources = self.location.resources.order_by('name')
         assert (remove_csrf(response.content['tbody']) ==
                 self.render_html_snippet(resources))
+
+
+class LocationResourcesAddTest(APITestCase, UserTestCase, TestCase):
+    view_class = ResourceAdd
+    get_data = {'draw': '1', 'start': 0, 'length': 10, 'order[0][column]': 0}
+
+    def setup_models(self):
+        self.user = UserFactory.create()
+        self.project = ProjectFactory.create()
+        self.location = SpatialUnitFactory.create(
+            project=self.project)
+        self.attached = ResourceFactory.create(
+            project=self.project,
+            content_object=self.location)
+        ResourceFactory.create_batch(5,
+                                     project=self.project)
+
+    def setup_url_kwargs(self):
+        return {
+            'organization': self.project.organization.slug,
+            'project': self.project.slug,
+            'object_id': self.location.id
+        }
+
+    def render_html_snippet(self, resources):
+        html = render_to_string(
+            'resources/table_snippets/resource_add.html',
+            context={'resources': resources,
+                     'project': self.project,
+                     'resource_lib': '/'},
+            request=RequestFactory().get('/'))
+
+        return remove_csrf(html)
+
+    def test_get_default(self):
+        assign_policies(self.user)
+        response = self.request(
+            user=self.user,
+            view_kwargs={'content_object': 'spatial.SpatialUnit'})
+        assert response.status_code == 200
+        assert response.content['draw'] == 1
+        assert response.content['recordsTotal'] == 5
+        assert response.content['recordsFiltered'] == 5
+
+        resources = self.project.resource_set.exclude(
+            id=self.attached.id).order_by('name')
+        assert (remove_csrf(response.content['tbody']) ==
+                self.render_html_snippet(resources))
+
+    def test_post_resource(self):
+        unattached = ResourceFactory.create(project=self.project)
+        assign_policies(self.user)
+        response = self.request(
+            user=self.user,
+            method='POST',
+            post_data={'resource': unattached.id},
+            view_kwargs={'content_object': 'spatial.SpatialUnit'})
+        assert response.status_code == 201
+        self.location.reload_resources()
+        assert unattached in self.location.resources
+
+    def test_post_resource_of_different_project(self):
+        unattached = ResourceFactory.create()
+        assign_policies(self.user)
+        response = self.request(
+            user=self.user,
+            method='POST',
+            post_data={'resource': unattached.id},
+            view_kwargs={'content_object': 'spatial.SpatialUnit'})
+        assert response.status_code == 400
+        self.location.reload_resources()
+        assert unattached not in self.location.resources
+
+    def test_post_attached_resource(self):
+        assign_policies(self.user)
+        response = self.request(
+            user=self.user,
+            method='POST',
+            post_data={'resource': self.attached.id},
+            view_kwargs={'content_object': 'spatial.SpatialUnit'})
+        assert response.status_code == 400

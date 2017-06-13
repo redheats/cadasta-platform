@@ -28,6 +28,18 @@ urls = [
         r'^resources/add/$',
         async.ResourceAdd.as_view(),
         name='add_to_project'),
+    url(
+        r'^parties/(?P<object_id>[-\w]+)/resources/add/$',
+        async.ResourceAdd.as_view(content_object='party.Party'),
+        name='add_to_party'),
+    url(
+        r'^locations/(?P<object_id>[-\w]+)/resources/add/$',
+        async.ResourceAdd.as_view(content_object='spatial.SpatialUnit'),
+        name='add_to_location'),
+    url(
+        r'^relationships/(?P<object_id>[-\w]+)/resources/add/$',
+        async.ResourceAdd.as_view(content_object='party.TenureRelationship'),
+        name='add_to_relationship'),
 ]
 
 
