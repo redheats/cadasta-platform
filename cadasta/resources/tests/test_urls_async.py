@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.core.urlresolvers import reverse, resolve
-from resources.views.async import ResourceList
+from resources.views.async import ResourceList, ResourceAdd
 
 
 class RessourceUrlTest(TestCase):
@@ -15,6 +15,21 @@ class RessourceUrlTest(TestCase):
         resolved = resolve(
             '/async/organizations/habitat/projects/123abc/resources/')
         assert resolved.func.__name__ == ResourceList.__name__
+        assert resolved.kwargs['organization'] == 'habitat'
+        assert resolved.kwargs['project'] == '123abc'
+
+    def test_project_add(self):
+        actual = reverse(
+            'async:resources:add_to_project',
+            kwargs={'organization': 'habitat', 'project': '123abc'}
+        )
+        expected = ('/async/organizations/habitat/projects/123abc/resources/'
+                    'add/')
+        assert actual == expected
+
+        resolved = resolve(
+            '/async/organizations/habitat/projects/123abc/resources/add/')
+        assert resolved.func.__name__ == ResourceAdd.__name__
         assert resolved.kwargs['organization'] == 'habitat'
         assert resolved.kwargs['project'] == '123abc'
 

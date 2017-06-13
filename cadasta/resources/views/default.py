@@ -60,6 +60,9 @@ class ProjectResourcesAdd(LoginPermissionRequiredMixin,
         context['resource_src'] = reverse(
             'async:resources:list',
             args=[project.organization.slug, project.slug])
+        context['resource_lib'] = reverse(
+            'async:resources:add_to_project',
+            args=[project.organization.slug, project.slug])
         return context
 
     # def post(self, request, *args, **kwargs):

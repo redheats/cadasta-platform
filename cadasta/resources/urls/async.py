@@ -24,6 +24,10 @@ urls = [
             content_object='party.TenureRelationship',
             template='resources/table_snippets/resource_sm.html'),
         name='relationship'),
+    url(
+        r'^resources/add/$',
+        async.ResourceAdd.as_view(),
+        name='add_to_project'),
 ]
 
 

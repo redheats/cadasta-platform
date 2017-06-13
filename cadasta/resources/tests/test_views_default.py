@@ -120,10 +120,6 @@ class ProjectResourcesAddTest(ViewTestCase, UserTestCase, TestCase):
 
     def setup_models(self):
         self.project = ProjectFactory.create()
-        self.attached = ResourceFactory.create(project=self.project,
-                                               content_object=self.project)
-        self.unattached = ResourceFactory.create(project=self.project)
-
         self.user = UserFactory.create()
         assign_permissions(self.user)
 
@@ -134,17 +130,15 @@ class ProjectResourcesAddTest(ViewTestCase, UserTestCase, TestCase):
         }
 
     def setup_template_context(self):
-        form = AddResourceFromLibraryForm(content_object=self.project,
-                                          project_id=self.project.id)
         return {'object': self.project,
-                'form': form,
-                'is_allowed_add_resource': True}
-
-    def setup_post_data(self):
-        return {
-            self.attached.id: False,
-            self.unattached.id: True,
-        }
+                'is_allowed_add_resource': True,
+                'resource_src': reverse(
+                    'async:resources:list',
+                    args=[self.project.organization.slug, self.project.slug]),
+                'resource_lib': reverse(
+                    'async:resources:add_to_project',
+                    args=[self.project.organization.slug, self.project.slug]),
+                }
 
     def test_get_list(self):
         response = self.request(user=self.user)
@@ -176,50 +170,6 @@ class ProjectResourcesAddTest(ViewTestCase, UserTestCase, TestCase):
         assert response.status_code == 302
         assert ("You don't have permission to add resources."
                 in response.messages)
-
-    def test_update(self):
-        project_resources = self.project.resources.all()
-        response = self.request(method='POST', user=self.user)
-        assert response.status_code == 302
-        assert response.location == self.expected_success_url
-        assert len(project_resources) == 2
-        assert self.attached in project_resources
-        assert self.unattached in project_resources
-
-    def test_update_with_custom_redirect(self):
-        project_resources = self.project.resources.all()
-        response = self.request(method='POST', user=self.user,
-                                get_data={'next': '/organizations/'})
-        assert response.status_code == 302
-        assert response.location == '/organizations/#resources'
-        assert len(project_resources) == 2
-        assert self.attached in project_resources
-        assert self.unattached in project_resources
-
-    def test_post_with_unauthorized_user(self):
-        response = self.request(method='POST', user=UserFactory.create())
-        assert ("You don't have permission to add resources."
-                in response.messages)
-        assert self.project.resources.count() == 1
-        assert self.project.resources.first() == self.attached
-
-    def test_post_with_unauthenticated_user(self):
-        response = self.request(method='POST')
-        assert response.status_code == 302
-        assert '/account/login/' in response.location
-        assert self.project.resources.count() == 1
-        assert self.project.resources.first() == self.attached
-
-    def test_post_with_archived_project(self):
-        self.project.archived = True
-        self.project.save()
-
-        response = self.request(method='POST', user=self.user)
-        assert response.status_code == 302
-        assert ("You don't have permission to add resources."
-                in response.messages)
-        assert self.project.resources.count() == 1
-        assert self.project.resources.first() == self.attached
 
 
 @pytest.mark.usefixtures('clear_temp')

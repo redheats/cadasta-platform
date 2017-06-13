@@ -2,7 +2,7 @@
 
 <script>
 window.addEventListener('load', function() {
-  $('#resource-list').DataTable({
+  $('.resource-list').DataTable({
     serverSide: true,
     columnDefs: [{
       targets: 4,
@@ -10,7 +10,7 @@ window.addEventListener('load', function() {
     }],
     drawCallback: function (settings) {
       var response = this.api().ajax.json().tbody;
-      $('#resource-list tbody').html(this.api().ajax.json().tbody);
+      $(this).find('tbody').html(this.api().ajax.json().tbody);
 
       // Link each resource row to its resource detail page
       $('tr.linked-resource').bind('click', function(e) {
@@ -25,9 +25,9 @@ window.addEventListener('load', function() {
         $('#undelete_resource_confirm').modal();
       });
     },
-    ajax: {
-      url: $('#resource-list').attr('data-src'),
-    },
+    // ajax: {
+    //   url: $('#resource-list').attr('data-src'),
+    // },
     dom: '<"table-search clearfix"f>t<"table-pagination"p><"table-entries"i><"table-num"l>',
     language: {
       emptyTable:     "{% trans "No data available in table" %}",

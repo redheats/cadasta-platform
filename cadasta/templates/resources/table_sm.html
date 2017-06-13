@@ -1,7 +1,8 @@
 {% load i18n %}
 
 <!-- Resources index - smaller version for right panel of map -->
-<table id="resource-list" class="table table-hover table-condensed" data-paging-type="simple" data-src="{{ resource_src }}">
+<table class="table table-hover table-condensed resource-list" data-paging-type="simple" data-ajax="{{ resource_src }}">
+<!-- <table class="table table-hover table-condensed resource-list" data-paging-type="simple"> -->
   <thead>
     <tr>
       <th class="col-md-10">{% trans "Resource" %}</th>

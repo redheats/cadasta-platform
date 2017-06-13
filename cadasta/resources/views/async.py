@@ -11,16 +11,14 @@ from core.views.mixins import SuperUserCheckMixin, AsyncList
 from ..models import ContentObject
 
 
-class ResourceList(APIPermissionRequiredMixin,
-                   SuperUserCheckMixin,
-                   AsyncList,
-                   ProjectMixin,
-                   generics.ListAPIView):
+class ResourcesView(APIPermissionRequiredMixin,
+                    SuperUserCheckMixin,
+                    AsyncList,
+                    ProjectMixin,
+                    generics.ListAPIView):
     sort_columns = ('name', 'mime_type', 'contributor__username',
                     'last_updated')
     content_object = 'organization.Project'
-    template = 'resources/table_snippets/resource.html'
-
     use_resource_library_queryset = True
 
     def get_actions(self, request):
@@ -34,19 +32,6 @@ class ResourceList(APIPermissionRequiredMixin,
     permission_required = {
         'GET': get_actions
     }
-
-    def get_queryset(self):
-        if self.content_object == 'organization.Project':
-            qs = self.get_project().resource_set.all().select_related(
-                'contributor')
-        else:
-            qs = self.get_content_object().resources.all().select_related(
-                'contributor')
-
-        if not self.is_superuser or self.get_org_role() is not None:
-            return qs.filter(archived=False)
-
-        return qs
 
     def get_perms_objects(self):
         return [self.get_project()]
@@ -68,6 +53,23 @@ class ResourceList(APIPermissionRequiredMixin,
                 Q(mime_type__contains=term) |
                 Q(contributor__username__contains=term) |
                 Q(contributor__full_name__contains=term))
+
+
+class ResourceList(ResourcesView):
+    template = 'resources/table_snippets/resource.html'
+
+    def get_queryset(self):
+        if self.content_object == 'organization.Project':
+            qs = self.get_project().resource_set.all().select_related(
+                'contributor')
+        else:
+            qs = self.get_content_object().resources.all().select_related(
+                'contributor')
+
+        if not self.is_superuser or self.get_org_role() is not None:
+            return qs.filter(archived=False)
+
+        return qs
 
     def get(self, *args, **kwargs):
         qs, records_total, records_filtered = self.get_results()
@@ -95,6 +97,43 @@ class ResourceList(APIPermissionRequiredMixin,
                     'resources': qs,
                     'project': self.get_project(),
                     'detatch_redirect': self.request.META['HTTP_REFERER']
+                },
+                request=self.request)
+        })
+
+
+class ResourceAdd(ResourcesView):
+    template = 'resources/table_snippets/resource_add.html'
+
+    def get_queryset(self):
+        content_object = self.get_content_object()
+        attached = content_object.resources.values_list('id', flat=True)
+
+        if self.content_object == 'organization.Project':
+            qs = self.get_project().resource_set
+        else:
+            qs = self.get_content_object().resources
+
+        qs = qs.exclude(id__in=attached).select_related('contributor')
+
+        if not self.is_superuser or self.get_org_role() is not None:
+            return qs.filter(archived=False)
+
+        return qs
+
+    def get(self, *args, **kwargs):
+        qs, records_total, records_filtered = self.get_results()
+
+        return Response({
+            'draw': int(self.request.GET.get('draw')),
+            'recordsTotal': records_total,
+            'recordsFiltered': records_filtered,
+            'data': [],
+            'tbody': render_to_string(
+                self.template,
+                context={
+                    'resources': qs,
+                    'project': self.get_project()
                 },
                 request=self.request)
         })

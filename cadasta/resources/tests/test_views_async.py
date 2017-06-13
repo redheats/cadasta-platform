@@ -11,7 +11,7 @@ from organization.models import OrganizationRole
 from core.tests.utils.cases import UserTestCase
 from party.tests.factories import PartyFactory, TenureRelationshipFactory
 from spatial.tests.factories import SpatialUnitFactory
-from ..views.async import ResourceList
+from ..views.async import ResourceList, ResourceAdd
 from ..models import Resource, ContentObject
 from .factories import ResourceFactory
 
@@ -268,6 +268,223 @@ class ProjectResourcesTest(APITestCase, UserTestCase, TestCase):
 
         resources = Resource.objects.filter(
             archived=False).order_by('name')[15:16]
+        assert (remove_csrf(response.content['tbody']) ==
+                self.render_html_snippet(resources))
+
+
+class ProjectResourcesAddTest(APITestCase, UserTestCase, TestCase):
+    view_class = ResourceAdd
+    get_data = {'draw': '1', 'start': 0, 'length': 10, 'order[0][column]': 0}
+
+    def setup_models(self):
+        self.user = UserFactory.create()
+        self.project = ProjectFactory.create()
+        self.search_resource = ResourceFactory.create(
+            name='TestForSearch',
+            project=self.project)
+        self.archived_resource = ResourceFactory.create(
+            name='Archived Resource',
+            project=self.project,
+            archived=True)
+        ResourceFactory.create_batch(5,
+                                     project=self.project)
+        self.attached = ResourceFactory.create(
+            name='TestForSearch',
+            project=self.project,
+            content_object=self.project)
+
+    def setup_url_kwargs(self):
+        return {
+            'organization': self.project.organization.slug,
+            'project': self.project.slug
+        }
+
+    def render_html_snippet(self, resources):
+        html = render_to_string(
+            'resources/table_snippets/resource_add.html',
+            context={'resources': resources,
+                     'project': self.project},
+            request=RequestFactory().get('/'))
+
+        return remove_csrf(html)
+
+    def test_get_default(self):
+        assign_policies(self.user)
+        response = self.request(user=self.user)
+        assert response.status_code == 200
+        assert response.content['draw'] == 1
+        assert response.content['recordsTotal'] == 6
+        assert response.content['recordsFiltered'] == 6
+
+        resources = Resource.objects.filter(
+            archived=False).exclude(id=self.attached.id).order_by('name')[0:10]
+        assert (remove_csrf(response.content['tbody']) ==
+                self.render_html_snippet(resources))
+
+    def test_get_default_superuser(self):
+        su_role = Role.objects.get(name='superuser')
+        self.user.assign_policies(su_role)
+        response = self.request(user=self.user)
+        assert response.status_code == 200
+        assert response.content['draw'] == 1
+        assert response.content['recordsTotal'] == 7
+        assert response.content['recordsFiltered'] == 7
+
+        resources = Resource.objects.exclude(
+            id=self.attached.id).order_by('name')[0:10]
+        assert (remove_csrf(response.content['tbody']) ==
+                self.render_html_snippet(resources))
+
+    def test_get_default_superuser_plus_org_member(self):
+        OrganizationRole.objects.create(user=self.user,
+                                        organization=self.project.organization)
+        su_role = Role.objects.get(name='superuser')
+        self.user.assign_policies(su_role)
+        response = self.request(user=self.user)
+        assert response.status_code == 200
+        assert response.content['draw'] == 1
+        assert response.content['recordsTotal'] == 6
+        assert response.content['recordsFiltered'] == 6
+
+        resources = Resource.objects.filter(
+            archived=False).exclude(id=self.attached.id).order_by('name')[0:10]
+        assert (remove_csrf(response.content['tbody']) ==
+                self.render_html_snippet(resources))
+
+    def test_get_default_org_member(self):
+        OrganizationRole.objects.create(user=self.user,
+                                        organization=self.project.organization)
+        response = self.request(user=self.user)
+        assert response.status_code == 200
+        assert response.content['draw'] == 1
+        assert response.content['recordsTotal'] == 6
+        assert response.content['recordsFiltered'] == 6
+
+        resources = Resource.objects.filter(
+            archived=False).exclude(id=self.attached.id).order_by('name')[0:10]
+        assert (remove_csrf(response.content['tbody']) ==
+                self.render_html_snippet(resources))
+
+    def test_get_organization_does_not_exist(self):
+        response = self.request(user=self.user,
+                                url_kwargs={'organization': 'some-org'})
+        assert response.status_code == 404
+        assert response.content['detail'] == "Project not found."
+
+    def test_get_project_does_not_exist(self):
+        response = self.request(user=self.user,
+                                url_kwargs={'project': 'some-prj'})
+        assert response.status_code == 404
+        assert response.content['detail'] == "Project not found."
+
+    def test_get_with_unauthorized_user(self):
+        response = self.request(user=self.user)
+        assert response.status_code == 403
+
+    def test_get_with_unauthenticated_user(self):
+        response = self.request(user=None)
+        assert response.status_code == 401
+
+    def test_get_private_project(self):
+        self.project.access = 'private'
+        self.project.save()
+
+        assign_policies(self.user)
+        response = self.request(user=self.user)
+        assert response.status_code == 200
+        assert response.content['draw'] == 1
+        assert response.content['recordsTotal'] == 6
+        assert response.content['recordsFiltered'] == 6
+
+        resources = Resource.objects.filter(
+            archived=False).exclude(id=self.attached.id).order_by('name')[0:10]
+        assert (remove_csrf(response.content['tbody']) ==
+                self.render_html_snippet(resources))
+
+    def test_get_archived_project(self):
+        self.project.archived = True
+        self.project.save()
+
+        assign_policies(self.user)
+        response = self.request(user=self.user)
+        assert response.status_code == 200
+        assert response.content['draw'] == 1
+        assert response.content['recordsTotal'] == 6
+        assert response.content['recordsFiltered'] == 6
+
+        resources = Resource.objects.filter(
+            archived=False).exclude(id=self.attached.id).order_by('name')[0:10]
+        assert (remove_csrf(response.content['tbody']) ==
+                self.render_html_snippet(resources))
+
+    def test_get_search(self):
+        assign_policies(self.user)
+        response = self.request(user=self.user,
+                                get_data={'search[value]': 'TestForSearch'})
+        assert response.status_code == 200
+        assert response.content['draw'] == 1
+        assert response.content['recordsTotal'] == 6
+        assert response.content['recordsFiltered'] == 1
+
+        assert (remove_csrf(response.content['tbody']) ==
+                self.render_html_snippet([self.search_resource]))
+
+    def test_get_order_by_name(self):
+        assign_policies(self.user)
+        response = self.request(user=self.user,
+                                get_data={'order[0][column]': 0,
+                                          'order[0][dir]': 'asc'})
+        assert response.status_code == 200
+        assert response.content['draw'] == 1
+        assert response.content['recordsTotal'] == 6
+        assert response.content['recordsFiltered'] == 6
+
+        resources = Resource.objects.filter(
+            archived=False).exclude(id=self.attached.id).order_by('name')[0:10]
+        assert (remove_csrf(response.content['tbody']) ==
+                self.render_html_snippet(resources))
+
+    def test_get_inverse_order_by_name(self):
+        assign_policies(self.user)
+        response = self.request(user=self.user,
+                                get_data={'order[0][column]': 0,
+                                          'order[0][dir]': 'desc'})
+        assert response.status_code == 200
+        assert response.content['draw'] == 1
+        assert response.content['recordsTotal'] == 6
+        assert response.content['recordsFiltered'] == 6
+
+        resources = Resource.objects.filter(
+            archived=False).exclude(id=self.attached.id).order_by(
+            '-name')[0:10]
+        assert (remove_csrf(response.content['tbody']) ==
+                self.render_html_snippet(resources))
+
+    def test_get_with_length(self):
+        assign_policies(self.user)
+        response = self.request(user=self.user, get_data={'length': 25})
+        assert response.status_code == 200
+        assert response.content['draw'] == 1
+        assert response.content['recordsTotal'] == 6
+        assert response.content['recordsFiltered'] == 6
+
+        resources = Resource.objects.filter(
+            archived=False).exclude(id=self.attached.id).order_by('name')
+        assert (remove_csrf(response.content['tbody']) ==
+                self.render_html_snippet(resources))
+
+    def test_get_with_length_and_start(self):
+        assign_policies(self.user)
+        response = self.request(user=self.user,
+                                get_data={'length': 15, 'start': 15})
+        assert response.status_code == 200
+        assert response.content['draw'] == 1
+        assert response.content['recordsTotal'] == 6
+        assert response.content['recordsFiltered'] == 6
+
+        resources = Resource.objects.filter(
+            archived=False).exclude(id=self.attached.id).order_by(
+            'name')[15:16]
         assert (remove_csrf(response.content['tbody']) ==
                 self.render_html_snippet(resources))
 
