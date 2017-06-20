@@ -31,6 +31,7 @@ class RegistrationSerializer(SanitizeFieldSerializer,
             'email',
             'password',
             'email_verified',
+            'measurement',
         )
         extra_kwargs = {
             'password': {'write_only': True},
@@ -82,6 +83,7 @@ class UserSerializer(SanitizeFieldSerializer,
             'email',
             'email_verified',
             'last_login',
+            'measurement',
         )
         extra_kwargs = {
             'email': {'required': True, 'unique': True},
@@ -109,6 +111,14 @@ class UserSerializer(SanitizeFieldSerializer,
                     last_login != instance.last_login):
                 raise ValidationError('Cannot update last_login')
         return last_login
+
+    def validate_measurement(self, measurement):
+        measurements = next(zip(*settings.MEASUREMENTS))
+        if measurement not in measurements:
+            raise ValidationError(
+                _("Select a valid choice. %s is not one "
+                  "of the available choices." % measurement))
+        return measurement
 
 
 class AccountLoginSerializer(djoser_serializers.LoginSerializer):
