@@ -72,7 +72,8 @@ class ProfileForm(SanitizeFieldsForm, forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'full_name']
+        fields = ['username', 'email', 'full_name',
+                  'measurement']
 
     class Media:
         js = ('js/sanitize.js', )
@@ -91,6 +92,15 @@ class ProfileForm(SanitizeFieldsForm, forms.ModelForm):
             raise forms.ValidationError(
                 _("Username cannot be “add” or “new”."))
         return username
+
+    def clean_measurement(self):
+        measurements = next(zip(*settings.MEASUREMENTS))
+        measurement = self.data.get('measurement')
+        if measurement not in measurements:
+            raise forms.ValidationError(
+                _("Select a valid choice. %s is not one "
+                  "of the available choices." % measurement))
+        return measurement
 
     def clean_password(self):
         if (self.fields['password'].required and

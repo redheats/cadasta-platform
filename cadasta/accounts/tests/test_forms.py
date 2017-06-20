@@ -4,6 +4,7 @@ from core.tests.utils.cases import UserTestCase
 from core.messages import SANITIZE_ERROR
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.core import mail
+from django.core.exceptions import ValidationError
 from django.http import HttpRequest
 from django.db import IntegrityError
 from allauth.account.models import EmailAddress
@@ -227,12 +228,14 @@ class ProfileFormTest(UserTestCase, TestCase):
         user = UserFactory.create(username='imagine71',
                                   email='john@beatles.uk',
                                   email_verified=True,
-                                  password='sgt-pepper')
+                                  password='sgt-pepper',
+                                  measurement='metric')
         data = {
             'username': 'imagine71',
             'email': 'john2@beatles.uk',
             'full_name': 'John Lennon',
-            'password': 'sgt-pepper'
+            'password': 'sgt-pepper',
+            'measurement': 'imperial'
         }
 
         request = HttpRequest()
@@ -248,6 +251,7 @@ class ProfileFormTest(UserTestCase, TestCase):
         user.refresh_from_db()
         assert user.full_name == 'John Lennon'
         assert user.email == 'john@beatles.uk'
+        assert user.measurement == 'imperial'
         assert user.email_verified is True
         assert len(mail.outbox) == 2
         assert 'john2@beatles.uk' in mail.outbox[0].to
@@ -256,14 +260,16 @@ class ProfileFormTest(UserTestCase, TestCase):
     def test_display_name(self):
         user = UserFactory.create(username='imagine71',
                                   email='john@beatles.uk',
-                                  password='sgt-pepper')
+                                  password='sgt-pepper',
+                                  measurement='metric')
         assert user.get_display_name() == 'imagine71'
 
         data = {
             'username': 'imagine71',
             'email': 'john@beatles.uk',
             'full_name': 'John Lennon',
-            'password': 'sgt-pepper'
+            'password': 'sgt-pepper',
+            'measurement': 'metric'
         }
         form = forms.ProfileForm(data, instance=user)
         form.save()
@@ -295,7 +301,7 @@ class ProfileFormTest(UserTestCase, TestCase):
             data = {
                 'username': user.username.lower(),
                 'email': '%s@beatles.uk' % user.username,
-                'full_name': 'John Lennon',
+                'full_name': 'John Lennon'
             }
             form = forms.ProfileForm(data, instance=existing_user)
             assert form.is_valid() is False
@@ -306,12 +312,14 @@ class ProfileFormTest(UserTestCase, TestCase):
 
         user = UserFactory.create(username='JohNlEnNoN',
                                   email='john@beatles.uk',
-                                  password='sgt-pepper')
+                                  password='sgt-pepper',
+                                  measurement='metric')
         data = {
             'username': 'johnLennon',
             'email': 'john@beatles.uk',
             'full_name': 'John Lennon',
-            'password': 'sgt-pepper'
+            'password': 'sgt-pepper',
+            'measurement': 'metric'
         }
         form = forms.ProfileForm(data, instance=user)
         assert form.is_valid() is True
@@ -351,14 +359,16 @@ class ProfileFormTest(UserTestCase, TestCase):
         user = UserFactory.create(username='user1',
                                   email='user1@example.com',
                                   email_verified=True,
-                                  password='sgt-pepper')
+                                  password='sgt-pepper',
+                                  measurement='metric')
 
         EmailAddress.objects.create(user=user, email=user.email,
                                     verified=True)
         data = {
             'username': 'user1',
             'email': 'user1_email_change@example.com',
-            'password': 'sgt-pepper'
+            'password': 'sgt-pepper',
+            'measurement': 'metric'
         }
 
         request = HttpRequest()
@@ -394,6 +404,25 @@ class ProfileFormTest(UserTestCase, TestCase):
         assert form.is_valid() is False
         assert ("Please provide the correct password for your account." in
                 form.errors['password'])
+
+    def test_update_user_with_invalid_measurement(self):
+        user = UserFactory.create(email='john@beatles.uk',
+                                  password='imagine71',
+                                  measurement='metric')
+        data = {
+            'username': 'imagine71',
+            'email': 'john2@beatles.uk',
+            'full_name': 'John Lennon',
+            'password': 'stg-pepper',
+            'measurement': 'invalid'
+        }
+        form = forms.ProfileForm(data, instance=user)
+        self.assertRaises(ValidationError, form.clean_measurement)
+        assert form.is_valid() is False
+        assert user.measurement == 'metric'
+        assert (_("Select a valid choice. %s is not one "
+                  "of the available choices." % data['measurement']) in
+                form.errors.get('measurement'))
 
     def test_sanitize(self):
         user = UserFactory.create(email='john@beatles.uk',
