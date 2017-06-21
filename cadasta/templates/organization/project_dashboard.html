@@ -110,7 +110,8 @@
             </ul>
 
             {% if total_area %}
-            <div style="text-align:right;padding:10px;"><b>Total Area:</b> {{ total_area | filter_preferred(user.measurement) | safe }}</div>
+            <div style="text-align:right;padding:10px;"><b>Total Area:</b>
+                {{ total_area | format_area:user.measurement | safe }}</div>
             {% endif %}
           {% else %}
             <!-- Starter text -->
