@@ -12,7 +12,7 @@
     <div class="page-title">
       <h2 class="short"><span class="entity">{% trans "Location" %} </span>{{ location.name }}</h2>
       {% if area %}
-       <p> {{ area | format_area_metric_units | safe }} </p>
+       <p> {{ area | filter_preferred(user.measurement) | safe }} </p>
       {% endif %}
       <div class="top-btn pull-right">
         <!-- Action buttons -->
