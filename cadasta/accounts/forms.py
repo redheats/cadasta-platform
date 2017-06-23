@@ -4,27 +4,42 @@ from django.utils.translation import ugettext as _
 from django.contrib.auth.password_validation import validate_password
 from allauth.account.utils import send_email_confirmation
 from allauth.account import forms as allauth_forms
-
 from core.form_mixins import SanitizeFieldsForm
 from .utils import send_email_update_notification
 from .models import User
-from .validators import check_username_case_insensitive
+from .validators import check_username_case_insensitive, phone_validator
 from parsley.decorators import parsleyfy
+from phonenumbers import parse as parse_phone
 
 
 @parsleyfy
 class RegisterForm(SanitizeFieldsForm, forms.ModelForm):
-    email = forms.EmailField(required=True)
+    email = forms.EmailField(required=False)
+
+    message = _("Phone must have format: +9999999999. Upto 15 digits allowed.")
+    phone = forms.RegexField(regex=r'\+?1?\d{9,15}',
+                             error_messages={'invalid': message},
+                             required=False)
     password = forms.CharField(widget=forms.PasswordInput())
     MIN_LENGTH = 10
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password',
+        fields = ['username', 'email', 'phone', 'password',
                   'full_name']
 
     class Media:
         js = ('js/sanitize.js', )
+
+    def clean(self):
+        super(RegisterForm, self).clean()
+
+        email = self.data.get('email')
+        phone = self.data.get('phone')
+
+        if phone == '' and email == '':
+            raise forms.ValidationError(
+                _("You cannot leave both phone and email empty."))
 
     def clean_username(self):
         username = self.data.get('username')
@@ -34,31 +49,49 @@ class RegisterForm(SanitizeFieldsForm, forms.ModelForm):
                 _("Username cannot be “add” or “new”."))
         return username
 
+    def clean_email(self):
+        email = self.data.get('email')
+        if email != '':
+            if User.objects.filter(email=email).exists():
+                raise forms.ValidationError(
+                    _("Another user with this email already exists"))
+        return email
+
+    def clean_phone(self):
+        phone = self.data.get('phone')
+        if phone != '':
+            if User.objects.filter(phone=phone).exists():
+                raise forms.ValidationError(
+                    _("Another user with this phone already exists"))
+        return phone
+
     def clean_password(self):
         password = self.data.get('password')
         validate_password(password)
         errors = []
 
-        email = self.data.get('email').split('@')
-        if len(email[0]) and email[0].casefold() in password.casefold():
-            errors.append(_("Passwords cannot contain your email."))
+        email = self.data.get('email')
+        if email != '':
+            email = email.split('@')
+            if email[0].casefold() in password.casefold():
+                errors.append(_("Passwords cannot contain your email."))
 
         username = self.data.get('username')
         if len(username) and username.casefold() in password.casefold():
             errors.append(
                 _("The password is too similar to the username."))
 
+        phone = self.data.get('phone')
+        if phone != '':
+            if phone_validator(phone):
+                phone = str(parse_phone(str(phone)).national_number)
+                if phone in password:
+                    errors.append(_("Passwords cannot contain your phone."))
+
         if errors:
             raise forms.ValidationError(errors)
 
         return password
-
-    def clean_email(self):
-        email = self.data.get('email')
-        if User.objects.filter(email=email).exists():
-            raise forms.ValidationError(
-                _("Another user with this email already exists"))
-        return email
 
     def save(self, *args, **kwargs):
         user = super().save(*args, **kwargs)

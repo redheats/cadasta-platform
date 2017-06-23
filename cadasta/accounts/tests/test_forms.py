@@ -21,6 +21,7 @@ class RegisterFormTest(UserTestCase, TestCase):
         data = {
             'username': 'imagine71',
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': 'iloveyoko79!',
             'full_name': 'John Lennon',
         }
@@ -42,6 +43,7 @@ class RegisterFormTest(UserTestCase, TestCase):
             data = {
                 'username': user.username.lower(),
                 'email': '%s@beatles.uk' % user.username,
+                'phone': '+919327768250',
                 'password': 'iloveyoko79!',
                 'full_name': 'John Lennon',
             }
@@ -54,6 +56,7 @@ class RegisterFormTest(UserTestCase, TestCase):
         data = {
             'username': 'johnLennon',
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': 'iloveyoko79!',
             'full_name': 'John Lennon',
         }
@@ -66,6 +69,7 @@ class RegisterFormTest(UserTestCase, TestCase):
         data = {
             'username': 'imagine71',
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': 'Letsimagine71things?',
             'full_name': 'John Lennon',
         }
@@ -80,6 +84,7 @@ class RegisterFormTest(UserTestCase, TestCase):
         data = {
             'username': 'imagine71',
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': 'LetsIMAGINE71things?',
             'full_name': 'John Lennon',
         }
@@ -94,6 +99,7 @@ class RegisterFormTest(UserTestCase, TestCase):
         data = {
             'username': '',
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': 'Letsimagine71things?',
             'full_name': 'John Lennon',
         }
@@ -107,6 +113,7 @@ class RegisterFormTest(UserTestCase, TestCase):
         data = {
             'username': 'imagine71',
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': 'IsJOHNreallythebest34?',
             'full_name': 'John Lennon',
         }
@@ -117,23 +124,11 @@ class RegisterFormTest(UserTestCase, TestCase):
                 form.errors.get('password'))
         assert User.objects.count() == 0
 
-    def test_password_contains_blank_email(self):
-        data = {
-            'username': 'imagine71',
-            'email': '',
-            'password': 'Isjohnreallythebest34?',
-            'full_name': 'John Lennon',
-        }
-        form = forms.RegisterForm(data)
-
-        assert form.is_valid() is False
-        assert (form.errors.get('password') is None)
-        assert User.objects.count() == 0
-
     def test_password_contains_less_than_min_characters(self):
         data = {
             'username': 'imagine71',
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': '<3yoko',
             'full_name': 'John Lennon',
         }
@@ -149,6 +144,7 @@ class RegisterFormTest(UserTestCase, TestCase):
         data = {
             'username': 'imagine71',
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': 'yokoisjustthebest',
             'full_name': 'John Lennon',
         }
@@ -165,6 +161,7 @@ class RegisterFormTest(UserTestCase, TestCase):
         data = {
             'username': 'imagine71',
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': 'YOKOISJUSTTHEBEST',
             'full_name': 'John Lennon',
         }
@@ -183,6 +180,7 @@ class RegisterFormTest(UserTestCase, TestCase):
         data = {
             'username': 'imagine71',
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': 'iloveyoko79',
             'full_name': 'John Lennon',
         }
@@ -198,6 +196,7 @@ class RegisterFormTest(UserTestCase, TestCase):
         data = {
             'username': random.choice(invalid_usernames),
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': 'Iloveyoko68!',
             'full_name': 'John Lennon'
         }
@@ -212,6 +211,7 @@ class RegisterFormTest(UserTestCase, TestCase):
         data = {
             'username': '😛😛😛😛',
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': 'Iloveyoko68!',
             'full_name': 'John Lennon'
         }
@@ -220,6 +220,126 @@ class RegisterFormTest(UserTestCase, TestCase):
         assert form.is_valid() is False
         assert SANITIZE_ERROR in form.errors.get('username')
         assert User.objects.count() == 0
+
+    def test_password_contains_blank_email(self):
+        data = {
+            'username': 'sherlock',
+            'email': '',
+            'phone': '+919327768250',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        form = forms.RegisterForm(data)
+        assert form.is_valid() is True
+        assert (form.errors.get('password') is None)
+
+        assert User.objects.count() == 0
+
+    def test_password_contains_blank_phone(self):
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': '',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        form = forms.RegisterForm(data)
+        assert form.is_valid() is True
+        assert (form.errors.get('password') is None)
+        assert User.objects.count() == 0
+
+    def test_password_contains_phone(self):
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': '+919327768250',
+            'password': 'holmes@9327768250',
+            'full_name': 'Sherlock Holmes'
+        }
+        form = forms.RegisterForm(data)
+        assert form.is_valid() is False
+        assert (_("Passwords cannot contain your phone.")
+                in form.errors.get('password'))
+        assert User.objects.count() == 0
+
+    def test_signup_with_existing_phone(self):
+        UserFactory.create(phone='+919327768250')
+
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': '+919327768250',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        form = forms.RegisterForm(data)
+        assert form.is_valid() is False
+        assert (_("Another user with this phone already exists")
+                in form.errors.get('phone'))
+        assert User.objects.count() == 1
+
+    def test_signup_with_invalid_phone(self):
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': 'Invalid Number',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        form = forms.RegisterForm(data)
+        assert form.is_valid() is False
+        assert (
+            _("Phone must have format: +9999999999. Upto 15 digits allowed.")
+            in form.errors.get('phone'))
+
+        assert User.objects.count() == 0
+
+    def test_signup_without_phone_and_email(self):
+        data = {
+            'username': 'sherlock',
+            'email': '',
+            'phone': '',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        form = forms.RegisterForm(data)
+        assert form.is_valid() is False
+        assert (_("You cannot leave both phone and email empty.")
+                in form.errors.get('__all__'))
+
+        assert User.objects.count() == 0
+
+    def test_signup_with_phone_only(self):
+        data = {
+            'username': 'sherlock',
+            'email': '',
+            'phone': '+919327768250',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        form = forms.RegisterForm(data)
+        form.save()
+        assert form.is_valid() is True
+        assert User.objects.count() == 1
+
+        user = User.objects.first()
+        assert user.check_password('221B@bakerstreet') is True
+
+    def test_signup_with_email_only(self):
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': '',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        form = forms.RegisterForm(data)
+        form.save()
+        assert form.is_valid() is True
+        assert User.objects.count() == 1
+
+        user = User.objects.first()
+        assert user.check_password('221B@bakerstreet') is True
 
 
 class ProfileFormTest(UserTestCase, TestCase):
