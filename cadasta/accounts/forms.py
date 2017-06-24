@@ -49,22 +49,6 @@ class RegisterForm(SanitizeFieldsForm, forms.ModelForm):
                 _("Username cannot be “add” or “new”."))
         return username
 
-    def clean_email(self):
-        email = self.data.get('email')
-        if email != '':
-            if User.objects.filter(email=email).exists():
-                raise forms.ValidationError(
-                    _("Another user with this email already exists"))
-        return email
-
-    def clean_phone(self):
-        phone = self.data.get('phone')
-        if phone != '':
-            if User.objects.filter(phone=phone).exists():
-                raise forms.ValidationError(
-                    _("Another user with this phone already exists"))
-        return phone
-
     def clean_password(self):
         password = self.data.get('password')
         validate_password(password)
@@ -84,7 +68,7 @@ class RegisterForm(SanitizeFieldsForm, forms.ModelForm):
         phone = self.data.get('phone')
         if phone != '':
             if phone_validator(phone):
-                phone = str(parse_phone(str(phone)).national_number)
+                phone = str(parse_phone(phone).national_number)
                 if phone in password:
                     errors.append(_("Passwords cannot contain your phone."))
 
@@ -92,6 +76,22 @@ class RegisterForm(SanitizeFieldsForm, forms.ModelForm):
             raise forms.ValidationError(errors)
 
         return password
+
+    def clean_email(self):
+        email = self.data.get('email')
+        if email != '':
+            if User.objects.filter(email=email).exists():
+                raise forms.ValidationError(
+                    _("Another user with this email already exists"))
+        return email
+
+    def clean_phone(self):
+        phone = self.data.get('phone')
+        if phone != '':
+            if User.objects.filter(phone=phone).exists():
+                raise forms.ValidationError(
+                    _("Another user with this phone already exists"))
+        return phone
 
     def save(self, *args, **kwargs):
         user = super().save(*args, **kwargs)
