@@ -2,13 +2,14 @@ from django.conf import settings
 from django.utils.translation import ugettext as _
 from django.contrib.auth.password_validation import validate_password
 
-from rest_framework.serializers import EmailField, ValidationError
+from rest_framework.serializers import EmailField, ValidationError, RegexField
 from rest_framework.validators import UniqueValidator
 from djoser import serializers as djoser_serializers
+from phonenumbers import parse as parse_phone
 
 from core.serializers import SanitizeFieldSerializer
 from .models import User
-from .validators import check_username_case_insensitive
+from .validators import check_username_case_insensitive, phone_validator
 from .exceptions import EmailNotVerifiedError
 
 
@@ -19,7 +20,21 @@ class RegistrationSerializer(SanitizeFieldSerializer,
             queryset=User.objects.all(),
             message=_("Another user is already registered with this "
                       "email address")
-        )]
+        )],
+        allow_blank=True
+    )
+    message = _("""Phone must have format: +9999999999. Upto 15 digits allowed.
+    Do not include hyphen or blank spaces in between, at the beginning
+    or at the end.""")
+    phone = RegexField(
+        regex=r'^\+(?:[0-9]?){6,14}[0-9]$',
+        error_messages={'invalid': message},
+        validators=[UniqueValidator(
+            queryset=User.objects.all(),
+            message=_("Another user is already registered with this "
+                      "phone number")
+        )],
+        allow_blank=True
     )
 
     class Meta:
@@ -28,13 +43,26 @@ class RegistrationSerializer(SanitizeFieldSerializer,
             'username',
             'full_name',
             'email',
+            'phone',
             'password',
             'email_verified',
+            'phone_verified'
         )
         extra_kwargs = {
             'password': {'write_only': True},
-            'email': {'required': True, 'unique': True}
+            'email': {'required': False, 'unique': True, },
+            'phone': {'required': False, 'unique': True, },
         }
+
+    def validate(self, data):
+        data = super(RegistrationSerializer, self).validate(data)
+
+        email = self.initial_data.get('email')
+        phone = self.initial_data.get('phone')
+        if email == '' and phone == '':
+            raise ValidationError(
+                _("You cannot leave both phone and email empty."))
+        return data
 
     def validate_username(self, username):
         check_username_case_insensitive(username)
@@ -47,9 +75,10 @@ class RegistrationSerializer(SanitizeFieldSerializer,
         validate_password(password)
 
         errors = []
-        if self.initial_data.get('email'):
-            email = self.initial_data.get('email').split('@')
-            if len(email[0]) and email[0].casefold() in password.casefold():
+        email = self.initial_data.get('email')
+        if email != '':
+            email = email.split('@')
+            if email[0].casefold() in password.casefold():
                 errors.append(_("Passwords cannot contain your email."))
 
         username = self.initial_data.get('username')
@@ -57,6 +86,12 @@ class RegistrationSerializer(SanitizeFieldSerializer,
             errors.append(
                 _("The password is too similar to the username."))
 
+        phone = self.initial_data.get('phone')
+        if phone != '':
+            if phone_validator(phone):
+                phone = str(parse_phone(phone).national_number)
+                if phone in password:
+                    errors.append(_("Passwords cannot contain your phone."))
         if errors:
             raise ValidationError(errors)
 

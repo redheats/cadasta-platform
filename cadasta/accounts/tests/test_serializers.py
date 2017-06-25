@@ -17,6 +17,7 @@ from .factories import UserFactory
 BASIC_TEST_DATA = {
     'username': 'imagine71',
     'email': 'john@beatles.uk',
+    'phone': '+919327768250',
     'password': 'iloveyoko79!',
     'full_name': 'John Lennon',
 }
@@ -27,6 +28,7 @@ class RegistrationSerializerTest(UserTestCase, TestCase):
         user = UserFactory.build()
         serializer = serializers.RegistrationSerializer(user)
         assert 'email_verified' in serializer.data
+        assert 'phone_verified' in serializer.data
         assert 'password' not in serializer.data
 
     def test_create_with_valid_data(self):
@@ -40,6 +42,7 @@ class RegistrationSerializerTest(UserTestCase, TestCase):
         assert user_obj.check_password(BASIC_TEST_DATA['password'])
         assert user_obj.is_active
         assert not user_obj.email_verified
+        assert not user_obj.phone_verified
 
     def test_case_insensitive_username(self):
         usernames = ['UsErOne', 'useRtWo', 'uSERthReE']
@@ -59,25 +62,12 @@ class RegistrationSerializerTest(UserTestCase, TestCase):
         serializer.save()
         assert User.objects.count() == 4
 
-    def test_create_without_email(self):
-        """Serialiser should be invalid when no email address is provided."""
-
-        data = {
-            'username': 'imagine71',
-            'password': 'iloveyoko79!',
-            'password_repeat': 'iloveyoko79!',
-            'full_name': 'John Lennon',
-        }
-
-        serializer = serializers.RegistrationSerializer(data=data)
-        assert not serializer.is_valid()
-
     def test_sanitize(self):
-        """Serialiser should be invalid when no email address is provided."""
 
         data = {
             'username': 'imagine71',
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': 'iloveyoko79!',
             'password_repeat': 'iloveyoko79!',
             'full_name': '😀😃😄😁😆😅',
@@ -96,6 +86,7 @@ class RegistrationSerializerTest(UserTestCase, TestCase):
         data = {
             'username': 'imagine71',
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': 'iloveyoko79!',
             'password_repeat': 'iloveyoko79!',
             'full_name': 'John Lennon',
@@ -111,6 +102,7 @@ class RegistrationSerializerTest(UserTestCase, TestCase):
         data = {
             'username': random.choice(invalid_usernames),
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': 'iloveyoko79!',
             'password_repeat': 'iloveyoko79!',
             'full_name': 'John Lennon',
@@ -125,6 +117,7 @@ class RegistrationSerializerTest(UserTestCase, TestCase):
         data = {
             'username': 'yoko79',
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': 'iloveyoko79!',
             'password_repeat': 'iloveyoko79!',
             'full_name': 'John Lennon',
@@ -138,6 +131,7 @@ class RegistrationSerializerTest(UserTestCase, TestCase):
         data = {
             'username': 'yoko79',
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': 'iloveYOKO79!',
             'password_repeat': 'iloveYOKO79!',
             'full_name': 'John Lennon',
@@ -151,6 +145,7 @@ class RegistrationSerializerTest(UserTestCase, TestCase):
         data = {
             'username': '',
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': 'iloveyoko79!',
             'password_repeat': 'iloveyoko79!',
             'full_name': 'John Lennon',
@@ -163,6 +158,7 @@ class RegistrationSerializerTest(UserTestCase, TestCase):
         data = {
             'username': 'imagine71',
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': 'johnisjustheBest!!',
             'password_repeat': 'johnisjustheBest!!',
             'full_name': 'John Lennon',
@@ -176,18 +172,20 @@ class RegistrationSerializerTest(UserTestCase, TestCase):
         data = {
             'username': 'imagine71',
             'email': '',
+            'phone': '+919327768250',
             'password': 'johnisjustheBest!!',
             'password_repeat': 'johnisjustheBest!!',
             'full_name': 'John Lennon',
         }
         serializer = serializers.RegistrationSerializer(data=data)
-        assert not serializer.is_valid()
+        assert serializer.is_valid()
         assert ('password' not in serializer._errors)
 
     def test_password_contains_less_than_min_characters(self):
         data = {
             'username': 'imagine71',
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': 'yoko<3',
             'password_repeat': 'yoko<3',
             'full_name': 'John Lennon',
@@ -202,6 +200,7 @@ class RegistrationSerializerTest(UserTestCase, TestCase):
         data = {
             'username': 'imagine71',
             'email': 'john@beatles.uk',
+            'phone': '+919327768250',
             'password': 'iloveyoko',
             'password_repeat': 'iloveyoko',
             'full_name': 'John Lennon',
@@ -213,6 +212,182 @@ class RegistrationSerializerTest(UserTestCase, TestCase):
                   "lowercase characters, uppercase characters,"
                   " special characters, and/or numerical character.\n"
                   ) in serializer._errors['password'])
+
+    def test_password_contains_phone(self):
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': '+919327768250',
+            'password': 'holmes@9327768250',
+            'password_repeat': 'holmes@9327768250',
+            'full_name': 'Sherlock Holmes'
+        }
+        serializer = serializers.RegistrationSerializer(data=data)
+        assert serializer.is_valid() is False
+        assert (_("Passwords cannot contain your phone.")
+                in serializer._errors['password'])
+
+    def test_password_contains_blank_phone(self):
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': '',
+            'password': '221B@bakerstreet',
+            'password_repeat': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        serializer = serializers.RegistrationSerializer(data=data)
+        assert serializer.is_valid() is True
+        assert ('password' not in serializer._errors)
+
+    def test_signup_with_phone_only(self):
+        data = {
+            'username': 'sherlock',
+            'email': '',
+            'phone': '+919327768250',
+            'password': '221B@bakerstreet',
+            'password_repeat': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        serializer = serializers.RegistrationSerializer(data=data)
+        assert serializer.is_valid() is True
+        serializer.save()
+        assert User.objects.count() == 1
+
+        user_obj = User.objects.first()
+        assert user_obj.check_password(data['password'])
+        assert user_obj.is_active
+        assert not user_obj.phone_verified
+
+    def test_signup_with_email_only(self):
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': '',
+            'password': '221B@bakerstreet',
+            'password_repeat': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        serializer = serializers.RegistrationSerializer(data=data)
+        assert serializer.is_valid() is True
+        serializer.save()
+        assert User.objects.count() == 1
+
+        user_obj = User.objects.first()
+        assert user_obj.check_password(data['password'])
+        assert user_obj.is_active
+        assert not user_obj.email_verified
+
+    def test_signup_with_existing_phone(self):
+        UserFactory.create(phone='+919327768250')
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': '+919327768250',
+            'password': '221B@bakerstreet',
+            'password_repeat': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        serializer = serializers.RegistrationSerializer(data=data)
+        assert serializer.is_valid() is False
+        assert (_("Another user is already registered with this phone number")
+                in serializer._errors['phone'])
+
+    def test_signup_without_phone_and_email(self):
+        data = {
+            'username': 'sherlock',
+            'email': '',
+            'phone': '',
+            'password': '221B@bakerstreet',
+            'password_repeat': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        serializer = serializers.RegistrationSerializer(data=data)
+        assert serializer.is_valid() is False
+        assert (
+            _("You cannot leave both phone and email empty.")
+            in serializer._errors['non_field_errors'])
+
+    def test_signup_with_invalid_phone(self):
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': 'Test Number',
+            'password': '221B@bakerstreet',
+            'password_repeat': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        serializer = serializers.RegistrationSerializer(data=data)
+        assert serializer.is_valid() is False
+        assert (
+            _("""Phone must have format: +9999999999. Upto 15 digits allowed.
+    Do not include hyphen or blank spaces in between, at the beginning
+    or at the end.""")
+            in serializer._errors['phone'])
+
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': '+91-9067439937',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        serializer = serializers.RegistrationSerializer(data=data)
+        assert serializer.is_valid() is False
+
+        assert (
+            _("""Phone must have format: +9999999999. Upto 15 digits allowed.
+    Do not include hyphen or blank spaces in between, at the beginning
+    or at the end.""")
+            in serializer._errors['phone'])
+
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': '9067439937',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        serializer = serializers.RegistrationSerializer(data=data)
+        assert serializer.is_valid() is False
+
+        assert (
+            _("""Phone must have format: +9999999999. Upto 15 digits allowed.
+    Do not include hyphen or blank spaces in between, at the beginning
+    or at the end.""")
+            in serializer._errors['phone'])
+
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': '9067439937',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        serializer = serializers.RegistrationSerializer(data=data)
+        assert serializer.is_valid() is False
+
+        assert (
+            _("""Phone must have format: +9999999999. Upto 15 digits allowed.
+    Do not include hyphen or blank spaces in between, at the beginning
+    or at the end.""")
+            in serializer._errors['phone'])
+
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': '+91 9067439937',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        serializer = serializers.RegistrationSerializer(data=data)
+        assert serializer.is_valid() is False
+
+        assert (
+            _("""Phone must have format: +9999999999. Upto 15 digits allowed.
+    Do not include hyphen or blank spaces in between, at the beginning
+    or at the end.""")
+            in serializer._errors['phone'])
 
 
 class UserSerializerTest(UserTestCase, TestCase):
