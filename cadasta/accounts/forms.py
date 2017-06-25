@@ -17,7 +17,7 @@ class RegisterForm(SanitizeFieldsForm, forms.ModelForm):
     email = forms.EmailField(required=False)
 
     message = _("Phone must have format: +9999999999. Upto 15 digits allowed.")
-    phone = forms.RegexField(regex=r'\+?1?\d{9,15}',
+    phone = forms.RegexField(regex=r'^\+(?:[0-9] ?){6,14}[0-9]$',
                              error_messages={'invalid': message},
                              required=False)
     password = forms.CharField(widget=forms.PasswordInput())

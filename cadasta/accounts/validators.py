@@ -63,7 +63,7 @@ def check_username_case_insensitive(username):
 
 
 def phone_validator(phone):
-    pattern = r'\+?1?\d{9,15}'
+    pattern = r'^\+(?:[0-9] ?){6,14}[0-9]$'
     if re.match(pattern=pattern, string=str(phone)) is not None:
         return True
     else:

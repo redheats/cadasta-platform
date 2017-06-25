@@ -341,6 +341,22 @@ class RegisterFormTest(UserTestCase, TestCase):
         user = User.objects.first()
         assert user.check_password('221B@bakerstreet') is True
 
+    def test_signup_with_phone_without_country_code(self):
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': '9327768250',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        form = forms.RegisterForm(data)
+        assert form.is_valid() is False
+        assert (
+            _("Phone must have format: +9999999999. Upto 15 digits allowed.")
+            in form.errors.get('phone'))
+
+        assert User.objects.count() == 0
+
 
 class ProfileFormTest(UserTestCase, TestCase):
     def test_update_user(self):
