@@ -16,8 +16,10 @@ from phonenumbers import parse as parse_phone
 class RegisterForm(SanitizeFieldsForm, forms.ModelForm):
     email = forms.EmailField(required=False)
 
-    message = _("Phone must have format: +9999999999. Upto 15 digits allowed.")
-    phone = forms.RegexField(regex=r'^\+(?:[0-9] ?){6,14}[0-9]$',
+    message = _("""Phone must have format: +9999999999. Upto 15 digits allowed.
+    Do not include hyphen or blank spaces in between, at the beginning
+    or at the end.""")
+    phone = forms.RegexField(regex=r'^\+(?:[0-9]?){6,14}[0-9]$',
                              error_messages={'invalid': message},
                              required=False)
     password = forms.CharField(widget=forms.PasswordInput())
@@ -39,7 +41,8 @@ class RegisterForm(SanitizeFieldsForm, forms.ModelForm):
 
         if phone == '' and email == '':
             raise forms.ValidationError(
-                _("You cannot leave both phone and email empty."))
+                _("""You cannot leave both phone and email empty.
+            Signup with either phone or email or both."""))
 
     def clean_username(self):
         username = self.data.get('username')

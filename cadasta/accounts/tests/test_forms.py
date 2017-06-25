@@ -289,8 +289,76 @@ class RegisterFormTest(UserTestCase, TestCase):
         form = forms.RegisterForm(data)
         assert form.is_valid() is False
         assert (
-            _("Phone must have format: +9999999999. Upto 15 digits allowed.")
+            _("""Phone must have format: +9999999999. Upto 15 digits allowed.
+    Do not include hyphen or blank spaces in between, at the beginning
+    or at the end.""")
             in form.errors.get('phone'))
+
+        assert User.objects.count() == 0
+
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': '+91-9067439937',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        form = forms.RegisterForm(data)
+        assert form.is_valid() is False
+        assert(
+            _("""Phone must have format: +9999999999. Upto 15 digits allowed.
+    Do not include hyphen or blank spaces in between, at the beginning
+    or at the end.""")
+            in form.errors.get('phone'))
+
+        assert User.objects.count() == 0
+
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': '9327768250',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        form = forms.RegisterForm(data)
+        assert form.is_valid() is False
+        assert (
+            _("""Phone must have format: +9999999999. Upto 15 digits allowed.
+    Do not include hyphen or blank spaces in between, at the beginning
+    or at the end.""")
+            in form.errors.get('phone'))
+
+        assert User.objects.count() == 0
+
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': '+91 9327768250',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        form = forms.RegisterForm(data)
+        assert form.is_valid() is False
+        assert (
+            _("""Phone must have format: +9999999999. Upto 15 digits allowed.
+    Do not include hyphen or blank spaces in between, at the beginning
+    or at the end.""") in form.errors.get('phone'))
+
+        assert User.objects.count() == 0
+
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': ' +919327768250 ',
+            'password': '221B@bakertstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        form = forms.RegisterForm(data)
+        assert form.is_valid() is False
+        assert(
+            _("""Phone must have format: +9999999999. Upto 15 digits allowed.
+    Do not include hyphen or blank spaces in between, at the beginning
+    or at the end.""") in form.errors.get('phone'))
 
         assert User.objects.count() == 0
 
@@ -304,7 +372,8 @@ class RegisterFormTest(UserTestCase, TestCase):
         }
         form = forms.RegisterForm(data)
         assert form.is_valid() is False
-        assert (_("You cannot leave both phone and email empty.")
+        assert (_("""You cannot leave both phone and email empty.
+            Signup with either phone or email or both.""")
                 in form.errors.get('__all__'))
 
         assert User.objects.count() == 0
@@ -340,22 +409,6 @@ class RegisterFormTest(UserTestCase, TestCase):
 
         user = User.objects.first()
         assert user.check_password('221B@bakerstreet') is True
-
-    def test_signup_with_phone_without_country_code(self):
-        data = {
-            'username': 'sherlock',
-            'email': 'sherlock.holmes@bbc.uk',
-            'phone': '9327768250',
-            'password': '221B@bakerstreet',
-            'full_name': 'Sherlock Holmes'
-        }
-        form = forms.RegisterForm(data)
-        assert form.is_valid() is False
-        assert (
-            _("Phone must have format: +9999999999. Upto 15 digits allowed.")
-            in form.errors.get('phone'))
-
-        assert User.objects.count() == 0
 
 
 class ProfileFormTest(UserTestCase, TestCase):
