@@ -131,10 +131,10 @@ class VerificationDevice(Device):
         help_text="Hex-encoded secret key to generate totp tokens.",
         unique=True,
     )
-    last_t = models.BigIntegerField(
+    last_verified_counter = models.BigIntegerField(
         default=-1,
-        help_text="The t value of the latest verified token.\
-         The next token must be at a higher time step.\
+        help_text="The counter value of the latest verified token.\
+         The next token must be at a higher counter value.\
          It makes sure a token is used only once."
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -159,7 +159,8 @@ class VerificationDevice(Device):
         token = str(totp.token()).zfill(self.digits)
 
         message = _("Your token for Cadasta is {token_value}."
-                    " It is valid for {time_validity} minutes.").format(
+                    " It is valid for {time_validity} minutes.")
+        message = message.format(
             token_value=token, time_validity=self.step // 60)
 
         logger.info("Token has been sent to %s " % self.unverified_phone)
@@ -174,8 +175,9 @@ class VerificationDevice(Device):
             verified = False
         else:
             totp = self.totp_obj()
-            if (totp.t() > self.last_t) and (totp.token() == token):
-                self.last_t = totp.t()
+            if ((totp.t() > self.last_verified_counter) and
+                    (totp.token() == token)):
+                self.last_verified_counter = totp.t()
                 verified = True
                 self.save()
             else:
