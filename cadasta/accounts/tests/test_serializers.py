@@ -305,7 +305,8 @@ class RegistrationSerializerTest(UserTestCase, TestCase):
         serializer = serializers.RegistrationSerializer(data=data)
         assert serializer.is_valid() is False
         assert (
-            _("You cannot leave both phone and email empty.")
+            _("You cannot leave both phone and email empty."
+              " Signup with either phone or email or both.")
             in serializer._errors['non_field_errors'])
 
     def test_signup_with_invalid_phone(self):
@@ -320,9 +321,9 @@ class RegistrationSerializerTest(UserTestCase, TestCase):
         serializer = serializers.RegistrationSerializer(data=data)
         assert serializer.is_valid() is False
         assert (
-            _("""Phone must have format: +9999999999. Upto 15 digits allowed.
-    Do not include hyphen or blank spaces in between, at the beginning
-    or at the end.""")
+            _("Phone must have format: +9999999999. Upto 15 digits allowed."
+                " Do not include hyphen or blank spaces in between, at the"
+                " beginning or at the end.")
             in serializer._errors['phone'])
 
         data = {
@@ -336,9 +337,9 @@ class RegistrationSerializerTest(UserTestCase, TestCase):
         assert serializer.is_valid() is False
 
         assert (
-            _("""Phone must have format: +9999999999. Upto 15 digits allowed.
-    Do not include hyphen or blank spaces in between, at the beginning
-    or at the end.""")
+            _("Phone must have format: +9999999999. Upto 15 digits allowed."
+                " Do not include hyphen or blank spaces in between, at the"
+                " beginning or at the end.")
             in serializer._errors['phone'])
 
         data = {
@@ -352,9 +353,9 @@ class RegistrationSerializerTest(UserTestCase, TestCase):
         assert serializer.is_valid() is False
 
         assert (
-            _("""Phone must have format: +9999999999. Upto 15 digits allowed.
-    Do not include hyphen or blank spaces in between, at the beginning
-    or at the end.""")
+            _("Phone must have format: +9999999999. Upto 15 digits allowed."
+                " Do not include hyphen or blank spaces in between, at the"
+                " beginning or at the end.")
             in serializer._errors['phone'])
 
         data = {
@@ -368,9 +369,9 @@ class RegistrationSerializerTest(UserTestCase, TestCase):
         assert serializer.is_valid() is False
 
         assert (
-            _("""Phone must have format: +9999999999. Upto 15 digits allowed.
-    Do not include hyphen or blank spaces in between, at the beginning
-    or at the end.""")
+            _("Phone must have format: +9999999999. Upto 15 digits allowed."
+                " Do not include hyphen or blank spaces in between, at the"
+                " beginning or at the end.")
             in serializer._errors['phone'])
 
         data = {
@@ -384,9 +385,9 @@ class RegistrationSerializerTest(UserTestCase, TestCase):
         assert serializer.is_valid() is False
 
         assert (
-            _("""Phone must have format: +9999999999. Upto 15 digits allowed.
-    Do not include hyphen or blank spaces in between, at the beginning
-    or at the end.""")
+            _("Phone must have format: +9999999999. Upto 15 digits allowed."
+                " Do not include hyphen or blank spaces in between, at the"
+                " beginning or at the end.")
             in serializer._errors['phone'])
 
 

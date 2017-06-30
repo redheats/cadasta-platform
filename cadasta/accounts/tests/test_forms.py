@@ -289,9 +289,9 @@ class RegisterFormTest(UserTestCase, TestCase):
         form = forms.RegisterForm(data)
         assert form.is_valid() is False
         assert (
-            _("""Phone must have format: +9999999999. Upto 15 digits allowed.
-    Do not include hyphen or blank spaces in between, at the beginning
-    or at the end.""")
+            _("Phone must have format: +9999999999. Upto 15 digits allowed."
+                " Do not include hyphen or blank spaces in between, at the"
+                " beginning or at the end.")
             in form.errors.get('phone'))
 
         assert User.objects.count() == 0
@@ -306,9 +306,9 @@ class RegisterFormTest(UserTestCase, TestCase):
         form = forms.RegisterForm(data)
         assert form.is_valid() is False
         assert(
-            _("""Phone must have format: +9999999999. Upto 15 digits allowed.
-    Do not include hyphen or blank spaces in between, at the beginning
-    or at the end.""")
+            _("Phone must have format: +9999999999. Upto 15 digits allowed."
+                " Do not include hyphen or blank spaces in between, at the"
+                " beginning or at the end.")
             in form.errors.get('phone'))
 
         assert User.objects.count() == 0
@@ -323,9 +323,9 @@ class RegisterFormTest(UserTestCase, TestCase):
         form = forms.RegisterForm(data)
         assert form.is_valid() is False
         assert (
-            _("""Phone must have format: +9999999999. Upto 15 digits allowed.
-    Do not include hyphen or blank spaces in between, at the beginning
-    or at the end.""")
+            _("Phone must have format: +9999999999. Upto 15 digits allowed."
+                " Do not include hyphen or blank spaces in between, at the"
+                " beginning or at the end.")
             in form.errors.get('phone'))
 
         assert User.objects.count() == 0
@@ -340,9 +340,9 @@ class RegisterFormTest(UserTestCase, TestCase):
         form = forms.RegisterForm(data)
         assert form.is_valid() is False
         assert (
-            _("""Phone must have format: +9999999999. Upto 15 digits allowed.
-    Do not include hyphen or blank spaces in between, at the beginning
-    or at the end.""") in form.errors.get('phone'))
+            _("Phone must have format: +9999999999. Upto 15 digits allowed."
+                " Do not include hyphen or blank spaces in between, at the"
+                " beginning or at the end.") in form.errors.get('phone'))
 
         assert User.objects.count() == 0
 
@@ -356,9 +356,9 @@ class RegisterFormTest(UserTestCase, TestCase):
         form = forms.RegisterForm(data)
         assert form.is_valid() is False
         assert(
-            _("""Phone must have format: +9999999999. Upto 15 digits allowed.
-    Do not include hyphen or blank spaces in between, at the beginning
-    or at the end.""") in form.errors.get('phone'))
+            _("Phone must have format: +9999999999. Upto 15 digits allowed."
+                " Do not include hyphen or blank spaces in between, at the"
+                " beginning or at the end.") in form.errors.get('phone'))
 
         assert User.objects.count() == 0
 
@@ -372,8 +372,8 @@ class RegisterFormTest(UserTestCase, TestCase):
         }
         form = forms.RegisterForm(data)
         assert form.is_valid() is False
-        assert (_("""You cannot leave both phone and email empty.
-            Signup with either phone or email or both.""")
+        assert (_("You cannot leave both phone and email empty."
+                  " Signup with either phone or email or both.")
                 in form.errors.get('__all__'))
 
         assert User.objects.count() == 0
