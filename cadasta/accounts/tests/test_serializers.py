@@ -293,7 +293,7 @@ class RegistrationSerializerTest(UserTestCase, TestCase):
         assert (_("Another user is already registered with this phone number")
                 in serializer._errors['phone'])
 
-    def test_signup_without_phone_and_email(self):
+    def test_signup_with_blank_phone_and_email(self):
         data = {
             'username': 'sherlock',
             'email': '',
@@ -389,6 +389,45 @@ class RegistrationSerializerTest(UserTestCase, TestCase):
                 " Do not include hyphen or blank spaces in between, at the"
                 " beginning or at the end.")
             in serializer._errors['phone'])
+
+    def test_signup_without_email(self):
+        """Pass Null value to email"""
+        data = {
+            'username': 'sherlock',
+            'phone': '+919327768250',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        serializer = serializers.RegistrationSerializer(data=data)
+        assert serializer.is_valid() is True
+        serializer.save()
+        assert User.objects.count() == 1
+
+    def test_signup_without_phone(self):
+        """Pass Null value to phone"""
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        serializer = serializers.RegistrationSerializer(data=data)
+        assert serializer.is_valid() is True
+        serializer.save()
+        assert User.objects.count() == 1
+
+    def test_signup_without_phone_and_email(self):
+        """Pass Null value to both phone and email"""
+        data = {
+            'username': 'sherlock',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        serializer = serializers.RegistrationSerializer(data=data)
+        assert serializer.is_valid() is False
+        assert (_("You cannot leave both phone and email empty."
+                  " Signup with either phone or email or both.")
+                in serializer._errors['non_field_errors'])
 
 
 class UserSerializerTest(UserTestCase, TestCase):

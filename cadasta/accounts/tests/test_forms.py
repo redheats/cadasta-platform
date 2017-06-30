@@ -362,7 +362,7 @@ class RegisterFormTest(UserTestCase, TestCase):
 
         assert User.objects.count() == 0
 
-    def test_signup_without_phone_and_email(self):
+    def test_signup_with_blank_phone_and_email(self):
         data = {
             'username': 'sherlock',
             'email': '',
