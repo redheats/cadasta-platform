@@ -23,7 +23,7 @@ django-widget-tweaks==1.4.1
 django-buckets==0.1.20
 pyxform-cadasta==0.9.22
 python-magic==0.4.13
-Pillow==4.1.1
+Pillow==4.2.0
 django-jsonattrs==0.1.22
 openpyxl==2.4.8
 pytz==2017.2
