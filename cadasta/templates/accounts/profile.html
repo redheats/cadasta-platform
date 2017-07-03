@@ -19,6 +19,17 @@
   {% csrf_token %}
   {{ form.non_field_errors }}
 
+  <!-- START image input block -->
+  <div class="form-group{% if form.avatar.errors %} has-error{% endif %}">
+    <label class="control-label" for="{{ form.avatar.id_for_label }}">{% trans "Upload profile image" %}</label>
+    <div class="well file-well">
+      {{ form.avatar }}
+      <p class="help-block">{% trans "Accepted file types: jpg, png" %}</p>
+    </div>
+    <div class="error-block">{{ form.avatar.errors }}</div>
+  </div>
+  <!-- END image input block -->
+
   <div class="form-group{% if form.username.errors %} has-error{% endif %}">
     <label class="control-label" for="{{ form.username.id_for_label }}">{% trans "Username" %}</label>
     {% render_field form.username class+="form-control input-lg" data-parsley-required="true" data-parsley-sanitize="1" %}

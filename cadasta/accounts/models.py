@@ -1,3 +1,4 @@
+from buckets.fields import S3FileField
 from datetime import datetime, timezone, timedelta
 from django.conf import settings
 from django.db import models
@@ -42,6 +43,10 @@ class User(auth_base.AbstractBaseUser, auth.PermissionsMixin):
     language = models.CharField(max_length=10,
                                 choices=settings.LANGUAGES,
                                 default=settings.LANGUAGE_CODE)
+    avatar = S3FileField(upload_to='avatars',
+                         accepted_types=['image/png', 'image/jpeg'],
+                         blank=True)
+
 
     objects = UserManager()
 
