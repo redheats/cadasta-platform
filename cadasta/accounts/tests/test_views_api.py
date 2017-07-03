@@ -95,6 +95,7 @@ class AccountSignupTest(APITestCase, UserTestCase, TestCase):
         assert response.status_code == 400
         assert User.objects.count() == 0
         assert len(mail.outbox) == 0
+        assert VerificationDevice.objects.count() == 0
 
     def test_user_signs_up_with_phone_only(self):
         data = {

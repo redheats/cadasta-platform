@@ -208,3 +208,11 @@ class ResetPasswordForm(allauth_forms.ResetPasswordForm):
         email = self.cleaned_data.get('email')
         self.users = User.objects.filter(email=email)
         return email
+
+
+class TokenVerificationForm(forms.Form):
+    token = forms.IntegerField(label=_("Token"),
+                               max_value=int('9' * settings.TOTP_DIGITS))
+
+    class Meta:
+        fields = ['token']

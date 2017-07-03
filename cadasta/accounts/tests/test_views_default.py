@@ -10,8 +10,74 @@ from core.tests.utils.cases import UserTestCase
 from allauth.account.models import EmailConfirmation, EmailAddress
 from allauth.account.forms import ChangePasswordForm
 
+from accounts.models import User, VerificationDevice
 from ..views import default
 from ..forms import ProfileForm
+
+
+class RegisterTest(ViewTestCase, UserTestCase, TestCase):
+    view_class = default.AccountRegister
+    template = 'accounts/signup.html'
+
+    def test_user_signs_up(self):
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': '+919327768250',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        response = self.request(method='POST', post_data=data)
+        assert response.status_code == 302
+        assert User.objects.count() == 1
+        assert VerificationDevice.objects.count() == 1
+        assert len(mail.outbox) == 1
+        user = User.objects.first()
+        assert user.check_password('221B@bakerstreet') is True
+        assert '/account/verificationpage/' in response.location
+
+    def test_signs_up_with_invalid(self):
+        data = {
+            'username': 'sherlock',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        response = self.request(method='POST', post_data=data)
+        assert response.status_code == 200
+        assert User.objects.count() == 0
+        assert VerificationDevice.objects.count() == 0
+        assert len(mail.outbox) == 0
+
+    def test_signs_up_with_phone_only(self):
+        data = {
+            'username': 'sherlock',
+            'email': '',
+            'phone': '+919327768250',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        import pytest; pytest.set_trace()
+        response = self.request(method='POST', post_data=data)
+        assert response.status_code == 302
+        assert User.objects.count() == 1
+        assert VerificationDevice.objects.count() == 1
+        assert len(mail.outbox) == 0
+        assert 'account/verificationpage/' in response.location
+
+    def test_signs_up_with_email_only(self):
+        data = {
+            'username': 'sherlock',
+            'email': 'sherlock.holmes@bbc.uk',
+            'phone': '',
+            'password': '221B@bakerstreet',
+            'full_name': 'Sherlock Holmes'
+        }
+        response = self.request(method='POST', post_data=data)
+        assert response.status_code == 302
+        assert User.objects.count() == 1
+        assert VerificationDevice.objects.count() == 0
+        assert len(mail.outbox) == 1
+        assert 'account/verificationpage/' in response.location
 
 
 class ProfileTest(ViewTestCase, UserTestCase, TestCase):

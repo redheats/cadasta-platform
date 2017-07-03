@@ -2,8 +2,10 @@ from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext as _
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import FormView
+from django.shortcuts import render
 
-from core.views.generic import UpdateView
+from core.views.generic import UpdateView, CreateView
 from core.views.mixins import SuperUserCheckMixin
 
 import allauth.account.views as allauth_views
@@ -13,6 +15,33 @@ from allauth.account.models import EmailAddress
 
 from ..models import User
 from .. import forms
+
+
+class AccountRegister(CreateView):
+    model = User
+    form_class = forms.RegisterForm
+    template_name = 'account/signup.html'
+    success_url = reverse_lazy('account:verification')
+
+    def form_valid(self, form):
+        self.user = form.save(self.request)
+        if self.user.email:
+            send_email_confirmation(self.request, self.user)
+        if self.user.phone:
+            device = self.user.verificationdevice_set.create(
+                unverified_phone=self.user.phone)
+            device.generate_challenge()
+            message = _("Verification Token sent to {phone}")
+            message = message.format(phone=self.user.phone)
+            messages.add_message(self.request, messages.SUCCESS, message)
+
+        return super().form_valid(form)
+
+    # def get_context_data(self, *args, **kwargs):
+    #     context = super(AccountRegister, self).get_context_data(
+    #         *args, **kwargs)
+    #     context["user"] = self.request.user
+    #     return context
 
 
 class PasswordChangeView(LoginRequiredMixin,
@@ -86,3 +115,9 @@ class ConfirmEmail(ConfirmEmailView):
         user.save()
 
         return response
+
+
+class AccountVerificationView(FormView):
+    template_name = 'accounts/account_verification.html'
+    form_class = forms.TokenVerificationForm
+    success_url = reverse_lazy('account:login')

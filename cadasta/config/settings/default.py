@@ -89,6 +89,7 @@ MIDDLEWARE_CLASSES = (
     'audit_log.middleware.UserLoggingMiddleware',
     'simple_history.middleware.HistoryRequestMiddleware',
     'django_otp.middleware.OTPMiddleware',
+
 )
 
 REST_FRAMEWORK = {

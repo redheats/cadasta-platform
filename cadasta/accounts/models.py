@@ -165,6 +165,7 @@ class VerificationDevice(Device):
 
         logger.info("Token has been sent to %s " % self.unverified_phone)
         logger.info("%s" % message)
+        print(token)
 
         return token
 

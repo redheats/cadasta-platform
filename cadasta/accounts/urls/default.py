@@ -3,6 +3,9 @@ from django.conf.urls import url
 from ..views import default
 
 urlpatterns = [
+    url(r'^signup/$', default.AccountRegister.as_view(), name='register'),
+    url(r'^verificationpage/$',
+        default.AccountVerificationView.as_view(), name='verification'),
     url(r'^profile/$', default.AccountProfile.as_view(), name='profile'),
     url(r'^login/$', default.AccountLogin.as_view(), name='login'),
     url(r'^confirm-email/(?P<key>[-:\w]+)/$', default.ConfirmEmail.as_view(),

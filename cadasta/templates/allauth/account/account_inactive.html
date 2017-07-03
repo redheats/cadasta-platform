@@ -8,11 +8,8 @@
 
 <div class="narrow">
 	<h1>{% trans "Account inactive" %}</h1>
-    {% if not user.email_verified %}
-    <p>{% blocktrans %}This account is inactive because your email address has not been confirmed.</p><p> We have sent you another email to confirm this address. Please click on the link inside this email. <a href="mailto:support@cadasta.org">Contact us</a> if you do not receive an email within a few minutes.{% endblocktrans %}</p>
-    {% else %}
-	<p>{% blocktrans %}This account is inactive. Please <a href="mailto:support@cadasta.org">contact us</a> if you need assistance.{% endblocktrans %}</p>
-    {% endif %}
-</div>
+    <p>{% blocktrans %}We have created your account. You should have received an email or a text to verify your account.</p><p> To verify your email address, click on the verification link sent to your email address.</p><p>To verify your phone number, enter the token sent to your phone number.</p>
+    <p>Click <a href="">here</a> If	you do not recieve any email or text.{% endblocktrans%}</p>
+	</div>
 
 {% endblock %}
