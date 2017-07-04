@@ -25,6 +25,7 @@ class AccountRegister(CreateView):
 
     def form_valid(self, form):
         self.user = form.save(self.request)
+        self.request.session['user_id'] = self.user.id
         if self.user.email:
             send_email_confirmation(self.request, self.user)
         if self.user.phone:
@@ -121,3 +122,22 @@ class AccountVerificationView(FormView):
     template_name = 'accounts/account_verification.html'
     form_class = forms.TokenVerificationForm
     success_url = reverse_lazy('account:login')
+
+    def form_valid(self, form):
+        print("Inside form valid")
+        user_id = self.request.session['user_id']
+        user = User.objects.get(id=user_id)
+        print(user, user.phone, user.verificationdevice_set.get(
+            unverified_phone=user.phone).generate_challenge())
+        device = user.verificationdevice_set.get(
+            unverified_phone=user.phone)
+        token = form.cleaned_data.get('token')
+        print(token, type(token))
+        if device.verify_token(token):
+            print("Inside if.")
+            user.phone_verified = True
+            user.save()
+            return super().form_valid(form)
+        else:
+            print("Inside else")
+            return super().form_invalid(form)

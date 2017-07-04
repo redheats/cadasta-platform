@@ -211,8 +211,16 @@ class ResetPasswordForm(allauth_forms.ResetPasswordForm):
 
 
 class TokenVerificationForm(forms.Form):
-    token = forms.IntegerField(label=_("Token"),
-                               max_value=int('9' * settings.TOTP_DIGITS))
+    token = forms.CharField(label=_("Token"), max_length=settings.TOTP_DIGITS)
 
     class Meta:
         fields = ['token']
+
+    def clean_token(self):
+        token = self.data.get('token')
+        try:
+            token = int(token)
+        except ValueError:
+            raise forms.ValidationError(_("Token must be a whole number"))
+        else:
+            return token

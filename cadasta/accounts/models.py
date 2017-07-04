@@ -170,17 +170,12 @@ class VerificationDevice(Device):
         return token
 
     def verify_token(self, token):
-        try:
-            token = int(token)
-        except ValueError:
-            verified = False
+        totp = self.totp_obj()
+        if ((totp.t() > self.last_verified_counter) and
+                (totp.token() == token)):
+            self.last_verified_counter = totp.t()
+            verified = True
+            self.save()
         else:
-            totp = self.totp_obj()
-            if ((totp.t() > self.last_verified_counter) and
-                    (totp.token() == token)):
-                self.last_verified_counter = totp.t()
-                verified = True
-                self.save()
-            else:
-                verified = False
+            verified = False
         return verified

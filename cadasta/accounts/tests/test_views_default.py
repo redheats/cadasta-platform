@@ -56,7 +56,6 @@ class RegisterTest(ViewTestCase, UserTestCase, TestCase):
             'password': '221B@bakerstreet',
             'full_name': 'Sherlock Holmes'
         }
-        import pytest; pytest.set_trace()
         response = self.request(method='POST', post_data=data)
         assert response.status_code == 302
         assert User.objects.count() == 1
